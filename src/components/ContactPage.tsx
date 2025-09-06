@@ -22,28 +22,28 @@ const ContactPage: React.FC = () => {
 
   const teamMembers = [
     {
-      name: 'Dr. Maria Rodriguez',
-      role: 'Chief Technology Officer',
+      name: 'Avnishka Bhardwaj',
+      role: 'Team Manager',
       image: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-      bio: '15+ years in agricultural technology and hydroponic systems development.'
+      bio: '3rd Year B.Tech (C.S.E) student.'
     },
     {
-      name: 'James Chen',
+      name: 'Samarth Sharma',
       role: 'Head of Engineering',
       image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg',
-      bio: 'Specializes in IoT integration and smart farming automation systems.'
+      bio: '3rd Year B.Tech (C.S.E) student..'
     },
     {
-      name: 'Sarah Thompson',
-      role: 'Agricultural Scientist',
+      name: 'Piyush Negi',
+      role: 'Head of Research and Devlopement Team',
       image: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg',
-      bio: 'Ph.D. in Plant Sciences with expertise in nutrient optimization and plant health.'
+      bio: '2nd Year B.Tech (C.S.E) student..'
     },
     {
-      name: 'Michael Park',
-      role: 'Customer Success Manager',
+      name: 'Parth Garg',
+      role: 'Head of Hardware Team',
       image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
-      bio: 'Dedicated to ensuring our clients achieve maximum success with their systems.'
+      bio: '3rd Year B.Tech (C.S.E) student.'
     }
   ];
 
