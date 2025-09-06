@@ -35,7 +35,7 @@ const ContactPage: React.FC = () => {
     },
     {
       name: 'Piyush Negi',
-      role: 'Head of Research and Devlopement Team',
+      role: 'Head of R&D Team',
       image: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg',
       bio: '2nd Year B.Tech (C.S.E) student..'
     },
