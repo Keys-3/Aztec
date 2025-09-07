@@ -3,7 +3,7 @@ import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone } from 'lucide-rea
 import { useAuth } from '../contexts/AuthContext';
 import UserProfile from './UserProfile';
 import AuthModal from './AuthModal';
-
+import logo from "../assets/logo.png";
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
@@ -25,10 +25,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
     <nav className="bg-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onPageChange('home')}>
-            <Sprout className="h-8 w-8 text-emerald-600" />
-            <span className="text-2xl font-bold text-gray-800">Aztec</span>
-            <span className="text-sm text-emerald-600 hidden sm:inline">Hydroponics</span>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onPageChange('home')}>
+            <img src={logo} alt="logo"
+            className="h-14 w-14" />
+            <span className="text-2xl font-bold text-emerald-600 hidden sm:inline">Aztec</span>
           </div>
 
           {/* Desktop Navigation */}
