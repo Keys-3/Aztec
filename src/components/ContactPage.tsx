@@ -41,7 +41,19 @@ const ContactPage: React.FC = () => {
     },
     {
       name: 'Parth Garg',
-      role: 'Head of Hardware Team',
+      role: 'Hardware Developer',
+      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      bio: '3rd Year B.Tech (C.S.E) student.'
+    },
+    {
+      name: 'Shreya Sharma',
+      role: 'Software Developer',
+      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      bio: '3rd Year B.Tech (A.I.M.L) student.'
+    },
+    {
+      name: 'Prithvi Singh',
+      role: 'Software Developer',
       image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
       bio: '3rd Year B.Tech (C.S.E) student.'
     }
@@ -202,7 +214,7 @@ const ContactPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone Support</h3>
-                    <p className="text-gray-600 mb-2">+1 (555) 123-4567</p>
+                    <p className="text-gray-600 mb-2">8076597189</p>
                     <p className="text-sm text-gray-500">Monday - Friday: 8:00 AM - 6:00 PM PST</p>
                   </div>
                 </div>
@@ -227,9 +239,9 @@ const ContactPage: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Our Location</h3>
                     <p className="text-gray-600 mb-2">
-                      123 Innovation Drive<br />
-                      Agri-Tech Valley, CA 90210<br />
-                      United States
+                      Inderprastha Engineering College<br />
+                      Ghaziabad, Delhi<br />
+                      India
                     </p>
                     <p className="text-sm text-gray-500">Visit by appointment only</p>
                   </div>
@@ -260,7 +272,7 @@ const ContactPage: React.FC = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">About Aztec Hydroponics</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Founded in 2018, we're pioneering the future of sustainable agriculture through innovative 
+              Founded in 2025, we're pioneering the future of sustainable agriculture through innovative 
               hydroponic technology that empowers farmers to grow more with less.
             </p>
           </div>
