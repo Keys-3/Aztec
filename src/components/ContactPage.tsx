@@ -305,7 +305,7 @@ const ContactPage: React.FC = () => {
             
             <div className="relative">
               <img
-                src="..\assets\system.jpeg"
+                src="..\assets\system.jpg"
                 alt="ponic system"
                 className="rounded-2xl shadow-2xl w-full h-96 object-cover"
               />
