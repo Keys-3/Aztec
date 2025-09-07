@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Droplets, Leaf, TrendingUp, Award, Star, Send, CheckCircle, ChevronLeft, ChevronRight, Coins, Shield, Globe } from 'lucide-react';
-
+import heroVideo from "../assets/ponic.mp4";
 const HomePage: React.FC = () => {
   const [feedback, setFeedback] = useState({ name: '', email: '', message: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -54,106 +54,62 @@ const HomePage: React.FC = () => {
   return (
   <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-emerald-50 via-white to-blue-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Hero Content */}
-            <div className="space-y-8">
-              <div>
-                <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                  Revolutionary
-                  <span className="text-emerald-600 block">Hydroponic</span>
-                  Agriculture
-                </h1>
-                <p className="text-xl text-gray-600 mt-6 leading-relaxed">
-                  Experience the future of farming with Aztec's cutting-edge
-                  hydroponic systems powered by blockchain technology. Our
-                  NFT-integrated platform allows you to own, trade, and monitor
-                  your crops digitally while maximizing yields, minimizing
-                  waste, and growing sustainably with precision agriculture
-                  technology.
-                </p>
-              </div>
+       <section className="relative w-full h-screen">
+  {/* Video Background */}
+  <video
+    src={heroVideo}
+    autoPlay
+    loop
+    muted
+    playsInline
+    className="absolute top-0 left-0 w-full h-full object-cover"
+  ></video>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <TrendingUp className="h-6 w-6 text-emerald-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">300%</div>
-                  <div className="text-sm text-gray-600">Faster Growth</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Droplets className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">90%</div>
-                  <div className="text-sm text-gray-600">Water Savings</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Leaf className="h-6 w-6 text-amber-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">100%</div>
-                  <div className="text-sm text-gray-600">Organic</div>
-                </div>
-              </div>
-            </div>
+  {/* Overlay */}
+  <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/25 to-transparent"></div>
 
-            {/* Hero Image Slider */}
-            <div className="relative h-96 lg:h-[500px]">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl h-full">
-                <img
-                  src={hydroponicImages[currentImageIndex].url}
-                  alt={hydroponicImages[currentImageIndex].title}
-                  className="w-full h-full object-cover transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent rounded-2xl"></div>
+  {/* Content */}
+  <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center h-full">
+    <div className="text-center lg:text-left space-y-6 lg:space-y-8">
+      <h1 className="text-5xl lg:text-6xl font-bold text-white leading-tight">
+        Revolutionary
+        <span className="block bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-500">
+          Hydroponic
+        </span>
+        Agriculture
+      </h1>
+      <p className="text-xl text-gray-200 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
+        Experience the future of farming with Aztec's cutting-edge hydroponic systems powered by blockchain technology.
+        Own, trade, and monitor your crops digitally while maximizing yields, minimizing waste, and growing sustainably.
+      </p>
 
-                {/* Nav buttons */}
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-all"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-all"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-
-                {/* Image Info */}
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <h3 className="text-xl font-bold mb-2">
-                    {hydroponicImages[currentImageIndex].title}
-                  </h3>
-                  <p className="text-sm text-gray-200">
-                    {hydroponicImages[currentImageIndex].description}
-                  </p>
-                </div>
-
-                {/* Dots */}
-                <div className="absolute bottom-4 right-6 flex space-x-2">
-                  {hydroponicImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentImageIndex
-                          ? "bg-white"
-                          : "bg-white/50"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-6 mt-8 max-w-md mx-auto lg:mx-0">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <TrendingUp className="h-6 w-6 text-emerald-600" />
           </div>
+          <div className="text-2xl font-bold text-white">300%</div>
+          <div className="text-sm text-gray-200">Faster Growth</div>
         </div>
-      </section>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Droplets className="h-6 w-6 text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold text-white">90%</div>
+          <div className="text-sm text-gray-200">Water Savings</div>
+        </div>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Leaf className="h-6 w-6 text-amber-600" />
+          </div>
+          <div className="text-2xl font-bold text-white">100%</div>
+          <div className="text-sm text-gray-200">Organic</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* NFT Integration */}
       <section className="py-20 bg-gradient-to-br from-blue-50 via-emerald-50 to-teal-50">

@@ -1,3 +1,4 @@
+/* Change this image at line 307*/
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle, Users, Award, Target, Zap } from 'lucide-react';
 
@@ -303,9 +304,9 @@ const ContactPage: React.FC = () => {
             </div>
             
             <div className="relative">
-              <img 
-                src="https://images.pexels.com/photos/4463893/pexels-photo-4463893.jpeg" 
-                alt="Our hydroponic facility" 
+              <img
+                src="..\assets\system.jpeg"
+                alt="ponic system"
                 className="rounded-2xl shadow-2xl w-full h-96 object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent rounded-2xl"></div>
