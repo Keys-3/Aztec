@@ -1,5 +1,8 @@
 import React from 'react';
 import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import UserProfile from './UserProfile';
+import AuthModal from './AuthModal';
 
 interface NavigationProps {
   currentPage: string;
@@ -8,6 +11,8 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const { user, loading } = useAuth();
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home },
@@ -27,7 +32,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
@@ -42,6 +47,22 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
                 {item.label}
               </button>
             ))}
+            
+            {/* Auth Section */}
+            <div className="flex items-center space-x-4">
+              {loading ? (
+                <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+              ) : user ? (
+                <UserProfile />
+              ) : (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -58,6 +79,26 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden pb-4">
+            <div className="px-3 py-2 border-b border-gray-200 mb-2">
+              {loading ? (
+                <div className="flex items-center justify-center py-2">
+                  <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : user ? (
+                <UserProfile />
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsAuthModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+            
             {navigationItems.map((item) => (
               <button
                 key={item.id}
@@ -77,6 +118,12 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
             ))}
           </div>
         )}
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
       </div>
     </nav>
   );

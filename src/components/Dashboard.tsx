@@ -1,7 +1,21 @@
 import React from 'react';
 import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './AuthModal';
 
 const Dashboard: React.FC = () => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const { user } = useAuth();
+
+  const handleBuyClick = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+    } else {
+      // Proceed with purchase
+      alert('Redirecting to purchase...');
+    }
+  };
+
   const sensorData = [
     { 
       id: 'temperature',
@@ -203,6 +217,7 @@ const Dashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Growth Progress</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Health Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Est. Harvest</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -240,6 +255,15 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {plant.harvestDate}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={handleBuyClick}
+                          className="bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center space-x-1"
+                        >
+                          <ShoppingCart className="h-3 w-3" />
+                          <span>Buy</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -328,6 +352,12 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
       </div>
     </div>
   );

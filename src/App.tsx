@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -25,13 +26,15 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
-      <main>
-        {renderPage()}
-      </main>
-      <Footer />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+        <main>
+          {renderPage()}
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
   );
 }
 
