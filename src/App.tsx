@@ -9,6 +9,7 @@ import ContactPage from './components/ContactPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
 
   const renderPage = () => {
     switch (currentPage) {
