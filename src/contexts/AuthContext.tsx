@@ -52,11 +52,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If no profile exists, set user to null instead of throwing error
+        if (error.code === 'PGRST116') {
+          setUser(null);
+          return;
+        }
+        throw error;
+      }
 
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
