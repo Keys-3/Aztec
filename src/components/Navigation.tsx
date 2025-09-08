@@ -17,7 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
+    { id: 'marketplace', label: 'Inventory', icon: ShoppingBag },
     { id: 'contact', label: 'Contact', icon: Phone },
   ];
 
@@ -26,8 +26,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onPageChange('home')}>
-            <img src={logo} alt="logo"
-            className="h-14 w-14" />
+            <img src={logo} alt="logo" className="h-14 w-14" />
             <span className="text-2xl font-bold text-emerald-600 sm:inline">Aztec</span>
           </div>
 

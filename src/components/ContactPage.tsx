@@ -1,6 +1,7 @@
 /* Change this image at line 307*/
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle, Users, Award, Target, Zap } from 'lucide-react';
+import photo from "../assets/system.png";
 
 const ContactPage: React.FC = () => {
   const [contactForm, setContactForm] = useState({
@@ -304,8 +305,7 @@ const ContactPage: React.FC = () => {
             </div>
             
             <div className="relative">
-              <img
-                src="..\assets\system.jpg"
+              <img src={photo}
                 alt="ponic system"
                 className="rounded-2xl shadow-2xl w-full h-96 object-cover"
               />

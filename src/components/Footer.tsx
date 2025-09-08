@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sprout, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
-
+import logo from "../assets/logo.png";
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-900 text-white">
@@ -9,8 +9,8 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Sprout className="h-8 w-8 text-emerald-400" />
-              <span className="text-xl font-bold">Aztec Hydroponics</span>
+              <img src={logo} alt="logo" className="h-12 w-12" />
+              <span className="text-xl font-bold text-emerald-600">Aztec</span>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
               Revolutionizing agriculture through advanced hydroponic technology, 
@@ -29,7 +29,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Home</a></li>
               <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Dashboard</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Marketplace</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Inventory</a></li>
               <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Support</a></li>
             </ul>
           </div>
