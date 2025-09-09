@@ -27,10 +27,11 @@ const Footer: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-emerald-400">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Home</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Dashboard</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Inventory</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Support</a></li>
+              <li><a href="Home" className="text-gray-300 hover:text-emerald-400 transition-colors">Home</a></li>
+              <li><a href="Dashboard" className="text-gray-300 hover:text-emerald-400 transition-colors">Dashboard</a></li>
+              <li><a href="Marketplace" className="text-gray-300 hover:text-emerald-400 transition-colors">Inventory</a></li>
+              <li><a href="Cart" className="text-gray-300 hover:text-emerald-400 transition-colors">Cart</a></li>
+              <li><a href="Contact" className="text-gray-300 hover:text-emerald-400 transition-colors">Support</a></li>
             </ul>
           </div>
 

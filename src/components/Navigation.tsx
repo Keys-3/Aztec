@@ -20,8 +20,8 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
     { id: 'home', label: 'Home', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'marketplace', label: 'Inventory', icon: ShoppingBag },
-    { id: 'contact', label: 'Contact', icon: Phone },
     { id: 'cart', label: 'Cart', icon: ShoppingCart },
+    { id: 'contact', label: 'Contact', icon: Phone },
   ];
 
   return (
