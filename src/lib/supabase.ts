@@ -30,6 +30,7 @@ export type Product = {
   rating: number;
   created_at: string;
   updated_at: string;
+  forSale?: boolean;
 };
 
 export type CartItem = {

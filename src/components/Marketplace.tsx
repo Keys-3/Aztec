@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, TrendingUp, Calendar, MapPin, Filter, Search, Star, ShoppingCart } from 'lucide-react';
+import { Package, TrendingUp, Calendar, MapPin, Filter, Search, Star, ShoppingCart, DollarSign, Shield, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
@@ -8,6 +8,17 @@ const Marketplace: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [quantityModal, setQuantityModal] = useState<{
+    isOpen: boolean;
+    product: any;
+    action: 'sell' | 'reserve';
+    quantity: number;
+  }>({
+    isOpen: false,
+    product: null,
+    action: 'sell',
+    quantity: 1
+  });
   const { addToCart } = useCart();
   const { user } = useAuth();
 
@@ -113,6 +124,67 @@ const Marketplace: React.FC = () => {
     addToCart(product, 1);
     // Show success message or toast
     alert(`${product.name} added to cart!`);
+  };
+
+  const handleSellClick = (product: any) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setQuantityModal({
+      isOpen: true,
+      product,
+      action: 'sell',
+      quantity: 1
+    });
+  };
+
+  const handleReserveClick = (product: any) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setQuantityModal({
+      isOpen: true,
+      product,
+      action: 'reserve',
+      quantity: 1
+    });
+  };
+
+  const handleQuantitySubmit = () => {
+    const { product, action, quantity } = quantityModal;
+    
+    if (quantity <= 0 || quantity > product.stock) {
+      alert(`Please enter a valid quantity (1-${product.stock})`);
+      return;
+    }
+
+    if (action === 'sell') {
+      // Add to cart for selling
+      addToCart({ ...product, forSale: true }, quantity);
+      alert(`${quantity} ${product.name}(s) listed for sale!`);
+    } else if (action === 'reserve') {
+      // Reserve stock (remove from available inventory)
+      // In a real app, this would update the database
+      alert(`${quantity} ${product.name}(s) reserved from inventory!`);
+    }
+
+    setQuantityModal({
+      isOpen: false,
+      product: null,
+      action: 'sell',
+      quantity: 1
+    });
+  };
+
+  const closeQuantityModal = () => {
+    setQuantityModal({
+      isOpen: false,
+      product: null,
+      action: 'sell',
+      quantity: 1
+    });
   };
 
   return (
@@ -232,14 +304,16 @@ const Marketplace: React.FC = () => {
                   
                   <div className="flex space-x-3">
                     <button className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
-                     Add to Cart
+                      onClick={() => handleSellClick(product)}
+                      <DollarSign className="h-4 w-4" />
+                      <span>List to Sell</span>
                     </button>
-                   <button 
-                     onClick={() => handleAddToCart(product)}
-                     className="flex-1 border border-emerald-400 text-emerald-400 py-2 px-4 rounded-lg hover:bg-emerald-900/20 transition-colors font-medium flex items-center justify-center space-x-1"
-                   >
-                     <ShoppingCart className="h-4 w-4" />
-                     <span>Buy Now</span>
+                    <button 
+                      onClick={() => handleReserveClick(product)}
+                      className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium flex items-center justify-center space-x-1"
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span>Reserve Stock</span>
                     </button>
                   </div>
                 </div>
@@ -293,6 +367,80 @@ const Marketplace: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Quantity Modal */}
+        {quantityModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {quantityModal.action === 'sell' ? 'List for Sale' : 'Reserve Stock'}
+                </h3>
+                <button
+                  onClick={closeQuantityModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex items-center space-x-4 mb-6">
+                  <img
+                    src={quantityModal.product?.image}
+                    alt={quantityModal.product?.name}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {quantityModal.product?.name}
+                    </h4>
+                    <p className="text-gray-600">Available: {quantityModal.product?.stock} units</p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantity {quantityModal.action === 'sell' ? 'to List' : 'to Reserve'}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={quantityModal.product?.stock}
+                    value={quantityModal.quantity}
+                    onChange={(e) => setQuantityModal({
+                      ...quantityModal,
+                      quantity: parseInt(e.target.value) || 1
+                    })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maximum: {quantityModal.product?.stock} units
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={closeQuantityModal}
+                    className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleQuantitySubmit}
+                    className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-white ${
+                      quantityModal.action === 'sell' 
+                        ? 'bg-emerald-600 hover:bg-emerald-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {quantityModal.action === 'sell' ? 'List for Sale' : 'Reserve Stock'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Auth Modal */}
         <AuthModal 
