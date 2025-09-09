@@ -1,6 +1,7 @@
 import React from 'react';
-import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone } from 'lucide-react';
+import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import UserProfile from './UserProfile';
 import AuthModal from './AuthModal';
 import logo from "../assets/logo.png";
@@ -13,12 +14,14 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const { user, loading } = useAuth();
+  const { itemCount } = useCart();
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'marketplace', label: 'Inventory', icon: ShoppingBag },
     { id: 'contact', label: 'Contact', icon: Phone },
+    { id: 'cart', label: 'Cart', icon: ShoppingCart },
   ];
 
   return (
@@ -36,14 +39,19 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
               <button
                 key={item.id}
                 onClick={() => onPageChange(item.id)}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 relative ${
                   currentPage === item.id
                     ? 'text-emerald-600 bg-emerald-50'
                     : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
                 } flex items-center space-x-2`}
               >
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span>{item.label}</span>
+                {item.id === 'cart' && itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
               </button>
             ))}
             
@@ -105,14 +113,19 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
                   onPageChange(item.id);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`block w-full text-left px-3 py-2 text-base font-medium transition-colors duration-200 ${
+                className={`block w-full text-left px-3 py-2 text-base font-medium transition-colors duration-200 relative ${
                   currentPage === item.id
                     ? 'text-emerald-600 bg-emerald-50'
                     : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
                 } flex items-center space-x-2`}
               >
                 <item.icon className="h-5 w-5" />
-                {item.label}
+                <span>{item.label}</span>
+                {item.id === 'cart' && itemCount > 0 && (
+                  <span className="absolute top-2 right-4 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>

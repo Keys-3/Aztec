@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { User, LogOut, Settings, ShoppingBag, ChevronDown } from 'lucide-react';
+import { User, LogOut, Settings, ShoppingBag, ChevronDown, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import OrderHistory from './OrderHistory';
 
 const UserProfile: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
   const { user, signOut } = useAuth();
 
   if (!user) return null;
@@ -47,18 +49,24 @@ const UserProfile: React.FC = () => {
             </div>
             
             <div className="py-2">
-              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+              <button 
+                onClick={() => {
+                  setShowOrderHistory(true);
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center space-x-2"
+              >
                 <ShoppingBag className="h-4 w-4" />
                 <span>My Orders</span>
               </button>
-              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+              <button className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center space-x-2">
                 <Settings className="h-4 w-4" />
                 <span>Account Settings</span>
               </button>
               <hr className="my-2" />
               <button
                 onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-900/20 flex items-center space-x-2"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -66,6 +74,14 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+      
+      {/* Order History Modal */}
+      {showOrderHistory && (
+        <OrderHistory 
+          isOpen={showOrderHistory} 
+          onClose={() => setShowOrderHistory(false)} 
+        />
       )}
     </div>
   );

@@ -1,18 +1,35 @@
 import React from 'react';
 import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import AuthModal from './AuthModal';
 
 const Dashboard: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const { user } = useAuth();
+  const { addToCart } = useCart();
 
   const handleBuyClick = () => {
     if (!user) {
       setIsAuthModalOpen(true);
     } else {
-      // Proceed with purchase
-      alert('Redirecting to purchase...');
+      // Add sample product to cart
+      const sampleProduct = {
+        id: 'sample-1',
+        name: 'Fresh Lettuce',
+        category: 'leafy-greens',
+        price: 399,
+        stock: 25,
+        image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
+        description: 'Fresh, crisp lettuce grown in our hydroponic system.',
+        harvest_date: '2025-01-10',
+        quality: 'Premium',
+        rating: 4.9,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      addToCart(sampleProduct, 1);
+      alert('Product added to cart!');
     }
   };
 

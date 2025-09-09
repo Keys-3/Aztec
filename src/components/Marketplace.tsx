@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Package, TrendingUp, Calendar, MapPin, Filter, Search, Star, ShoppingCart } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './AuthModal';
 
 const Marketplace: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { addToCart } = useCart();
+  const { user } = useAuth();
 
   const products = [
     {
@@ -16,7 +22,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-10',
       quality: 'Premium',
       rating: 4.9,
-      description: 'Fresh, crisp lettuce grown in our state-of-the-art hydroponic system.'
+      description: 'Fresh, crisp lettuce grown in our state-of-the-art hydroponic system.',
+      image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg'
     },
     {
       id: 2,
@@ -28,7 +35,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-08',
       quality: 'Premium',
       rating: 4.8,
-      description: 'Sweet, vine-ripened cherry tomatoes packed with flavor and nutrients.'
+      description: 'Sweet, vine-ripened cherry tomatoes packed with flavor and nutrients.',
+      image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg'
     },
     {
       id: 3,
@@ -40,7 +48,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-12',
       quality: 'Premium',
       rating: 4.9,
-      description: 'Aromatic basil leaves perfect for cooking and garnishing.'
+      description: 'Aromatic basil leaves perfect for cooking and garnishing.',
+      image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg'
     },
     {
       id: 4,
@@ -52,7 +61,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-09',
       quality: 'Premium',
       rating: 4.7,
-      description: 'Tender baby spinach leaves rich in iron and vitamins.'
+      description: 'Tender baby spinach leaves rich in iron and vitamins.',
+      image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg'
     },
     {
       id: 5,
@@ -64,7 +74,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-11',
       quality: 'Premium',
       rating: 4.8,
-      description: 'Variety pack including basil, cilantro, parsley, and mint.'
+      description: 'Variety pack including basil, cilantro, parsley, and mint.',
+      image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg'
     },
     {
       id: 6,
@@ -76,7 +87,8 @@ const Marketplace: React.FC = () => {
       harvestDate: '2025-01-13',
       quality: 'Premium',
       rating: 4.6,
-      description: 'Crisp, refreshing cucumbers perfect for salads and snacking.'
+      description: 'Crisp, refreshing cucumbers perfect for salads and snacking.',
+      image_url: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg'
     }
   ];
 
@@ -92,6 +104,16 @@ const Marketplace: React.FC = () => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const handleAddToCart = (product: any) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    addToCart(product, 1);
+    // Show success message or toast
+    alert(`${product.name} added to cart!`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -210,10 +232,14 @@ const Marketplace: React.FC = () => {
                   
                   <div className="flex space-x-3">
                     <button className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
-                      List for Sale
+                     Add to Cart
                     </button>
-                    <button className="flex-1 border border-emerald-600 text-emerald-600 py-2 px-4 rounded-lg hover:bg-emerald-50 transition-colors font-medium">
-                      Reserve Stock
+                   <button 
+                     onClick={() => handleAddToCart(product)}
+                     className="flex-1 border border-emerald-400 text-emerald-400 py-2 px-4 rounded-lg hover:bg-emerald-900/20 transition-colors font-medium flex items-center justify-center space-x-1"
+                   >
+                     <ShoppingCart className="h-4 w-4" />
+                     <span>Buy Now</span>
                     </button>
                   </div>
                 </div>
@@ -267,6 +293,12 @@ const Marketplace: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
       </div>
     </div>
   );
