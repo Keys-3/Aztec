@@ -54,19 +54,19 @@ const UserProfile: React.FC = () => {
                   setShowOrderHistory(true);
                   setIsDropdownOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
               >
                 <ShoppingBag className="h-4 w-4" />
                 <span>My Orders</span>
               </button>
-              <button className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center space-x-2">
+              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
                 <Settings className="h-4 w-4" />
                 <span>Account Settings</span>
               </button>
               <hr className="my-2" />
               <button
                 onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-900/20 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
