@@ -279,7 +279,7 @@ const Dashboard: React.FC = () => {
                           className="bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center space-x-1"
                         >
                           <ShoppingCart className="h-3 w-3" />
-                          <span>Buy</span>
+                          <span>Ready</span>
                         </button>
                       </td>
                     </tr>
