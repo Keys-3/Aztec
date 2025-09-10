@@ -8,6 +8,14 @@ const Marketplace: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [inventoryStock, setInventoryStock] = useState<{[key: string]: number}>({
+    'prod-1': 25,
+    'prod-2': 18,
+    'prod-3': 32,
+    'prod-4': 22,
+    'prod-5': 15,
+    'prod-6': 28
+  });
   const [quantityModal, setQuantityModal] = useState<{
     isOpen: boolean;
     product: any;
@@ -19,83 +27,83 @@ const Marketplace: React.FC = () => {
     action: 'sell',
     quantity: 1
   });
-  const { addToCart, addToSelling } = useCart();
+  const { addToCart, addToSelling, sellingItems } = useCart();
   const { user } = useAuth();
 
   const products = [
     {
-      id: 1,
+      id: 'prod-1',
       name: 'Organic Lettuce',
       category: 'leafy-greens',
-      price: '₹399/kg',
-      stock: 25,
+      price: 399,
+      stock: inventoryStock['prod-1'],
       image: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
-      harvestDate: '2025-01-10',
+      harvest_date: '2025-01-10',
       quality: 'Premium',
       rating: 4.9,
       description: 'Fresh, crisp lettuce grown in our state-of-the-art hydroponic system.',
       image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg'
     },
     {
-      id: 2,
+      id: 'prod-2',
       name: 'Cherry Tomatoes',
       category: 'fruits',
-      price: '₹559/kg',
-      stock: 18,
+      price: 559,
+      stock: inventoryStock['prod-2'],
       image: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
-      harvestDate: '2025-01-08',
+      harvest_date: '2025-01-08',
       quality: 'Premium',
       rating: 4.8,
       description: 'Sweet, vine-ripened cherry tomatoes packed with flavor and nutrients.',
       image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg'
     },
     {
-      id: 3,
+      id: 'prod-3',
       name: 'Fresh Basil',
       category: 'herbs',
-      price: '₹279/bunch',
-      stock: 32,
+      price: 279,
+      stock: inventoryStock['prod-3'],
       image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-      harvestDate: '2025-01-12',
+      harvest_date: '2025-01-12',
       quality: 'Premium',
       rating: 4.9,
       description: 'Aromatic basil leaves perfect for cooking and garnishing.',
       image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg'
     },
     {
-      id: 4,
+      id: 'prod-4',
       name: 'Baby Spinach',
       category: 'leafy-greens',
-      price: '₹439/kg',
-      stock: 22,
+      price: 439,
+      stock: inventoryStock['prod-4'],
       image: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
-      harvestDate: '2025-01-09',
+      harvest_date: '2025-01-09',
       quality: 'Premium',
       rating: 4.7,
       description: 'Tender baby spinach leaves rich in iron and vitamins.',
       image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg'
     },
     {
-      id: 5,
+      id: 'prod-5',
       name: 'Mixed Herbs Bundle',
       category: 'herbs',
-      price: '₹719/bundle',
-      stock: 15,
+      price: 719,
+      stock: inventoryStock['prod-5'],
       image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
-      harvestDate: '2025-01-11',
+      harvest_date: '2025-01-11',
       quality: 'Premium',
       rating: 4.8,
       description: 'Variety pack including basil, cilantro, parsley, and mint.',
       image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg'
     },
     {
-      id: 6,
+      id: 'prod-6',
       name: 'Cucumber',
       category: 'fruits',
-      price: '₹239/each',
-      stock: 28,
+      price: 239,
+      stock: inventoryStock['prod-6'],
       image: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
-      harvestDate: '2025-01-13',
+      harvest_date: '2025-01-13',
       quality: 'Premium',
       rating: 4.6,
       description: 'Crisp, refreshing cucumbers perfect for salads and snacking.',
@@ -103,11 +111,17 @@ const Marketplace: React.FC = () => {
     }
   ];
 
+  // Get selling stock for each product
+  const getSellingStock = (productId: string) => {
+    const sellingItem = sellingItems.find(item => item.product.id === productId);
+    return sellingItem ? sellingItem.quantity : 0;
+  };
+
   const storageStats = [
     { name: 'Total Storage Capacity', value: '500 kg', icon: Package },
-    { name: 'Current Stock', value: '340 kg', icon: TrendingUp },
+    { name: 'Current Stock', value: `${Object.values(inventoryStock).reduce((a, b) => a + b, 0)} units`, icon: TrendingUp },
     { name: 'This Month\'s Harvest', value: '125 kg', icon: Calendar },
-    { name: 'Available for Sale', value: '280 kg', icon: ShoppingCart }
+    { name: 'Listed for Sale', value: `${sellingItems.reduce((sum, item) => sum + item.quantity, 0)} units`, icon: ShoppingCart }
   ];
 
   const filteredProducts = products.filter(product => {
@@ -131,6 +145,10 @@ const Marketplace: React.FC = () => {
       setIsAuthModalOpen(true);
       return;
     }
+    if (product.stock <= 0) {
+      alert('No stock available to sell!');
+      return;
+    }
     setQuantityModal({
       isOpen: true,
       product,
@@ -142,6 +160,10 @@ const Marketplace: React.FC = () => {
   const handleReserveClick = (product: any) => {
     if (!user) {
       setIsAuthModalOpen(true);
+      return;
+    }
+    if (product.stock <= 0) {
+      alert('No stock available to reserve!');
       return;
     }
     setQuantityModal({
@@ -161,12 +183,19 @@ const Marketplace: React.FC = () => {
     }
 
     if (action === 'sell') {
-      // Add to selling items
+      // Add to selling items and reduce inventory stock
       addToSelling(product, quantity);
+      setInventoryStock(prev => ({
+        ...prev,
+        [product.id]: prev[product.id] - quantity
+      }));
       alert(`${quantity} ${product.name}(s) listed for sale!`);
     } else if (action === 'reserve') {
-      // Reserve stock (remove from available inventory)
-      // In a real app, this would update the database
+      // Reserve stock (reduce from available inventory)
+      setInventoryStock(prev => ({
+        ...prev,
+        [product.id]: prev[product.id] - quantity
+      }));
       alert(`${quantity} ${product.name}(s) reserved from inventory!`);
     }
 
@@ -219,6 +248,85 @@ const Marketplace: React.FC = () => {
           </div>
         </section>
 
+        {/* Shop Products Section */}
+        {sellingItems.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop - Listed for Sale</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {sellingItems.map((sellingItem) => (
+                <div key={`shop-${sellingItem.product.id}`} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-emerald-200">
+                  <div className="relative">
+                    <img 
+                      src={sellingItem.product.image} 
+                      alt={sellingItem.product.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      For Sale
+                    </div>
+                    <div className="absolute bottom-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      {sellingItem.quantity} Available
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900">{sellingItem.product.name}</h3>
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm text-gray-600">{sellingItem.product.rating}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">{sellingItem.product.description}</p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Price:</span>
+                        <span className="font-semibold text-emerald-600">₹{sellingItem.product.price}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Available for Sale:</span>
+                        <span className="font-medium text-emerald-600">{sellingItem.quantity} units</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Harvest Date:</span>
+                        <span className="font-medium">{new Date(sellingItem.product.harvest_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      <button 
+                        onClick={() => handleAddToCart(sellingItem.product)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-1"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        <span>Buy Now</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (window.confirm(`Remove ${sellingItem.product.name} from shop?`)) {
+                            // Return stock to inventory
+                            setInventoryStock(prev => ({
+                              ...prev,
+                              [sellingItem.product.id]: prev[sellingItem.product.id] + sellingItem.quantity
+                            }));
+                            // Remove from selling items
+                            removeFromSelling(sellingItem.product.id);
+                          }
+                        }}
+                        className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Filters and Search */}
         <section className="mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -257,7 +365,7 @@ const Marketplace: React.FC = () => {
 
         {/* Product Grid */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Products</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Inventory - Available Products</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
@@ -274,6 +382,11 @@ const Marketplace: React.FC = () => {
                     <MapPin className="h-4 w-4 inline mr-1" />
                     Local Farm
                   </div>
+                  {product.stock <= 0 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">Out of Stock</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-6">
@@ -290,29 +403,37 @@ const Marketplace: React.FC = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Price:</span>
-                      <span className="font-semibold text-emerald-600">{product.price}</span>
+                       <span className="font-semibold text-emerald-600">₹{product.price}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Stock:</span>
-                      <span className="font-medium">{product.stock} units</span>
+                       <span className={`font-medium ${product.stock <= 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                         {product.stock} units
+                       </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Listed for Sale:</span>
+                      <span className="font-medium text-emerald-600">{getSellingStock(product.id)} units</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Harvest Date:</span>
-                      <span className="font-medium">{new Date(product.harvestDate).toLocaleDateString()}</span>
+                       <span className="font-medium">{new Date(product.harvest_date).toLocaleDateString()}</span>
                     </div>
                   </div>
                   
                   <div className="flex space-x-3">
                     <button 
                       onClick={() => handleSellClick(product)}
-                      className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-1"
+                      disabled={product.stock <= 0}
+                      className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center space-x-1"
                     >
                       <DollarSign className="h-4 w-4" />
                       <span>List to Sell</span>
                     </button>
                     <button 
                       onClick={() => handleReserveClick(product)}
-                      className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium flex items-center justify-center space-x-1"
+                      disabled={product.stock <= 0}
+                      className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center space-x-1"
                     >
                       <Shield className="h-4 w-4" />
                       <span>Reserve Stock</span>
