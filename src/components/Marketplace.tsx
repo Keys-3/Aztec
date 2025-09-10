@@ -19,7 +19,7 @@ const Marketplace: React.FC = () => {
     action: 'sell',
     quantity: 1
   });
-  const { addToCart } = useCart();
+  const { addToCart, addToSelling } = useCart();
   const { user } = useAuth();
 
   const products = [
@@ -161,8 +161,8 @@ const Marketplace: React.FC = () => {
     }
 
     if (action === 'sell') {
-      // Add to cart for selling
-      addToCart({ ...product, forSale: true }, quantity);
+      // Add to selling items
+      addToSelling(product, quantity);
       alert(`${quantity} ${product.name}(s) listed for sale!`);
     } else if (action === 'reserve') {
       // Reserve stock (remove from available inventory)
@@ -303,8 +303,10 @@ const Marketplace: React.FC = () => {
                   </div>
                   
                   <div className="flex space-x-3">
-                    <button className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+                    <button 
                       onClick={() => handleSellClick(product)}
+                      className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-1"
+                    >
                       <DollarSign className="h-4 w-4" />
                       <span>List to Sell</span>
                     </button>

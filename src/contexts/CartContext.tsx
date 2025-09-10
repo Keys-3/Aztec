@@ -12,10 +12,12 @@ interface CartContextType extends CartState {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  addToSelling: (product: Product, quantity?: number) => void;
 }
 
 type CartAction =
   | { type: 'ADD_TO_CART'; payload: { product: Product; quantity: number } }
+  | { type: 'ADD_TO_SELLING'; payload: { product: Product; quantity: number } }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
   | { type: 'CLEAR_CART' }
@@ -41,6 +43,27 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       
       const total = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      return { items: newItems, total, itemCount };
+    }
+    
+    case 'ADD_TO_SELLING': {
+      const productWithSaleFlag = { ...action.payload.product, forSale: true };
+      const existingItem = state.items.find(item => item.product.id === action.payload.product.id && item.product.forSale);
+      
+      let newItems: CartItem[];
+      if (existingItem) {
+        newItems = state.items.map(item =>
+          item.product.id === action.payload.product.id && item.product.forSale
+            ? { ...item, quantity: item.quantity + action.payload.quantity }
+            : item
+        );
+      } else {
+        newItems = [...state.items, { product: productWithSaleFlag, quantity: action.payload.quantity }];
+      }
+      
+      const total = newItems.reduce((sum, item) => sum + (item.product.forSale ? 0 : item.product.price * item.quantity), 0);
+      const itemCount = newItems.reduce((sum, item) => sum + (item.product.forSale ? 0 : item.quantity), 0);
       
       return { items: newItems, total, itemCount };
     }
@@ -110,6 +133,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'ADD_TO_CART', payload: { product, quantity } });
   };
 
+  const addToSelling = (product: Product, quantity = 1) => {
+    dispatch({ type: 'ADD_TO_SELLING', payload: { product, quantity } });
+  };
+
   const removeFromCart = (productId: string) => {
     dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
   };
@@ -125,6 +152,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     ...state,
     addToCart,
+    addToSelling,
     removeFromCart,
     updateQuantity,
     clearCart,
