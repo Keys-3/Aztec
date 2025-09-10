@@ -13,6 +13,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -27,6 +28,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setFormData({ email: '', password: '', username: '', contact: '' });
     setMessage(null);
     setShowPassword(false);
+    setRememberMe(false);
   };
 
   const handleClose = () => {
@@ -41,7 +43,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
     try {
       if (mode === 'login') {
-        const { error } = await signIn(formData.email, formData.password);
+        const { error } = await signIn(formData.email, formData.password, rememberMe);
         if (error) {
           setMessage({ type: 'error', text: error.message || 'Login failed' });
         } else {
@@ -49,7 +51,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           setTimeout(() => handleClose(), 1500);
         }
       } else {
-        const { error } = await signUp(formData.email, formData.password, formData.username, formData.contact);
+        const { error } = await signUp(formData.email, formData.password, formData.username, formData.contact, rememberMe);
         if (error) {
           setMessage({ type: 'error', text: error.message || 'Signup failed' });
         } else {
@@ -192,6 +194,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               )}
             </div>
 
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                Keep me signed in
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {rememberMe 
+                ? "You'll stay signed in until you manually sign out" 
+                : "You'll be automatically signed out when you close the browser or after 30 minutes of inactivity"
+              }
+            </p>
             <button
               type="submit"
               disabled={loading}

@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import AuthModal from './AuthModal';
 
 const CartPage: React.FC = () => {
-  const { items, total, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
+  const { items, total, updateQuantity, removeFromCart, clearCart, addToCart, sellingItems } = useCart();
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'marketplace' | 'cart'>('marketplace');
@@ -25,93 +25,8 @@ const CartPage: React.FC = () => {
     country: 'India'
   });
 
-  // Sample products for the marketplace
-  const products = [
-    {
-      id: 'prod-1',
-      name: 'Fresh Lettuce',
-      category: 'leafy-greens',
-      price: 399,
-      stock: 25,
-      image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
-      description: 'Fresh, crisp lettuce grown in our hydroponic system.',
-      harvest_date: '2025-01-10',
-      quality: 'Premium',
-      rating: 4.9,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prod-2',
-      name: 'Cherry Tomatoes',
-      category: 'fruits',
-      price: 559,
-      stock: 18,
-      image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
-      description: 'Sweet, vine-ripened cherry tomatoes packed with flavor.',
-      harvest_date: '2025-01-08',
-      quality: 'Premium',
-      rating: 4.8,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prod-3',
-      name: 'Fresh Basil',
-      category: 'herbs',
-      price: 279,
-      stock: 32,
-      image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-      description: 'Aromatic basil leaves perfect for cooking and garnishing.',
-      harvest_date: '2025-01-12',
-      quality: 'Premium',
-      rating: 4.9,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prod-4',
-      name: 'Baby Spinach',
-      category: 'leafy-greens',
-      price: 439,
-      stock: 22,
-      image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
-      description: 'Tender baby spinach leaves rich in iron and vitamins.',
-      harvest_date: '2025-01-09',
-      quality: 'Premium',
-      rating: 4.7,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prod-5',
-      name: 'Mixed Herbs Bundle',
-      category: 'herbs',
-      price: 719,
-      stock: 15,
-      image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
-      description: 'Variety pack including basil, cilantro, parsley, and mint.',
-      harvest_date: '2025-01-11',
-      quality: 'Premium',
-      rating: 4.8,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prod-6',
-      name: 'Cucumber',
-      category: 'fruits',
-      price: 239,
-      stock: 28,
-      image_url: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
-      description: 'Crisp, refreshing cucumbers perfect for salads.',
-      harvest_date: '2025-01-13',
-      quality: 'Premium',
-      rating: 4.6,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
+  // Use selling items as products for the marketplace
+  const products = sellingItems.map(item => item.product);
 
   const filteredProducts = products.filter(product => {
     const matchesFilter = filter === 'all' || product.category === filter;
@@ -285,6 +200,20 @@ const CartPage: React.FC = () => {
         {/* Marketplace View */}
         {currentView === 'marketplace' && (
           <>
+            {products.length === 0 ? (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+                <ShoppingBag className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+                <h2 className="text-2xl font-bold text-white mb-4">No Products Available</h2>
+                <p className="text-gray-400 mb-8">List some products from your inventory to start selling!</p>
+                <button 
+                  onClick={() => window.location.href = '#marketplace'}
+                  className="bg-emerald-600 text-white px-8 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
+                  Go to Inventory
+                </button>
+              </div>
+            ) : (
+              <>
             {/* Filters */}
             <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-gray-700">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -332,9 +261,9 @@ const CartPage: React.FC = () => {
                     <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
                       {product.quality}
                     </div>
-                    <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
-                      {product.stock} in stock
-                    </div>
+                     <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                       {sellingItems.find(item => item.product.id === product.id)?.quantity || 0} available
+                     </div>
                   </div>
                   
                   <div className="p-6">
@@ -355,7 +284,11 @@ const CartPage: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-400">Harvest Date:</span>
-                        <span className="font-medium text-white">{new Date(product.harvest_date).toLocaleDateString()}</span>
+                         <span className="font-medium text-emerald-400">{sellingItems.find(item => item.product.id === product.id)?.quantity || 0} units</span>
+                       </div>
+                       <div className="flex items-center justify-between text-sm">
+                         <span className="text-gray-400">Harvest Date:</span>
+                         <span className="font-medium text-white">{new Date(product.harvest_date).toLocaleDateString()}</span>
                       </div>
                     </div>
                     
@@ -370,6 +303,8 @@ const CartPage: React.FC = () => {
                 </div>
               ))}
             </div>
+              </>
+            )}
           </>
         )}
 
