@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Minus, Plus, Trash2, ShoppingBag, CreditCard, MapPin, User, Phone, Mail, ArrowLeft, DollarSign, Eye } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, CreditCard, MapPin, User, Phone, Mail, ArrowLeft, Star, Filter, Search, Heart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AuthModal from './AuthModal';
 
 const CartPage: React.FC = () => {
-  const { items, total, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { items, total, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'purchase' | 'selling'>('purchase');
+  const [currentView, setCurrentView] = useState<'marketplace' | 'cart'>('marketplace');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [shippingDetails, setShippingDetails] = useState({
     full_name: '',
     phone: '',
@@ -22,6 +24,114 @@ const CartPage: React.FC = () => {
     postal_code: '',
     country: 'India'
   });
+
+  // Sample products for the marketplace
+  const products = [
+    {
+      id: 'prod-1',
+      name: 'Fresh Lettuce',
+      category: 'leafy-greens',
+      price: 399,
+      stock: 25,
+      image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
+      description: 'Fresh, crisp lettuce grown in our hydroponic system.',
+      harvest_date: '2025-01-10',
+      quality: 'Premium',
+      rating: 4.9,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-2',
+      name: 'Cherry Tomatoes',
+      category: 'fruits',
+      price: 559,
+      stock: 18,
+      image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
+      description: 'Sweet, vine-ripened cherry tomatoes packed with flavor.',
+      harvest_date: '2025-01-08',
+      quality: 'Premium',
+      rating: 4.8,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-3',
+      name: 'Fresh Basil',
+      category: 'herbs',
+      price: 279,
+      stock: 32,
+      image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
+      description: 'Aromatic basil leaves perfect for cooking and garnishing.',
+      harvest_date: '2025-01-12',
+      quality: 'Premium',
+      rating: 4.9,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-4',
+      name: 'Baby Spinach',
+      category: 'leafy-greens',
+      price: 439,
+      stock: 22,
+      image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
+      description: 'Tender baby spinach leaves rich in iron and vitamins.',
+      harvest_date: '2025-01-09',
+      quality: 'Premium',
+      rating: 4.7,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-5',
+      name: 'Mixed Herbs Bundle',
+      category: 'herbs',
+      price: 719,
+      stock: 15,
+      image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
+      description: 'Variety pack including basil, cilantro, parsley, and mint.',
+      harvest_date: '2025-01-11',
+      quality: 'Premium',
+      rating: 4.8,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-6',
+      name: 'Cucumber',
+      category: 'fruits',
+      price: 239,
+      stock: 28,
+      image_url: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
+      description: 'Crisp, refreshing cucumbers perfect for salads.',
+      harvest_date: '2025-01-13',
+      quality: 'Premium',
+      rating: 4.6,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ];
+
+  const filteredProducts = products.filter(product => {
+    const matchesFilter = filter === 'all' || product.category === filter;
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const handleAddToCart = (product: any) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    addToCart(product, 1);
+    // Show success message
+    const successMsg = document.createElement('div');
+    successMsg.className = 'fixed top-4 right-4 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+    successMsg.textContent = `${product.name} added to cart!`;
+    document.body.appendChild(successMsg);
+    setTimeout(() => document.body.removeChild(successMsg), 3000);
+  };
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -57,7 +167,7 @@ const CartPage: React.FC = () => {
         .insert([
           {
             user_id: user.id,
-            total_amount: total,
+            total_amount: total + 50, // Including delivery charges
             status: 'pending',
             shipping_address: shippingDetails
           }
@@ -105,12 +215,6 @@ const CartPage: React.FC = () => {
     }
   };
 
-  // Separate items for purchase and selling
-  const purchaseItems = items.filter(item => !item.product.forSale);
-  const sellingItems = items.filter(item => item.product.forSale);
-  const purchaseTotal = purchaseItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const sellingTotal = sellingItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-
   if (orderPlaced) {
     return (
       <div className="min-h-screen bg-gray-900 py-8">
@@ -124,7 +228,10 @@ const CartPage: React.FC = () => {
               Thank you for your order. We'll process it shortly and send you a confirmation email.
             </p>
             <button
-              onClick={() => setOrderPlaced(false)}
+              onClick={() => {
+                setOrderPlaced(false);
+                setCurrentView('marketplace');
+              }}
               className="bg-emerald-600 text-white px-8 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
             >
               Continue Shopping
@@ -140,45 +247,144 @@ const CartPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Cart & Marketplace</h1>
-          <p className="text-gray-400">Manage your purchases and items for sale</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Fresh Produce Marketplace</h1>
+          <p className="text-gray-400">Premium hydroponic vegetables and herbs grown with care</p>
           
-          {/* Tab Navigation */}
+          {/* View Toggle */}
           <div className="mt-6 flex space-x-1 bg-gray-800 rounded-lg p-1 w-fit">
             <button
-              onClick={() => setActiveTab('purchase')}
+              onClick={() => setCurrentView('marketplace')}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'purchase'
+                currentView === 'marketplace'
                   ? 'bg-emerald-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
               <ShoppingBag className="h-4 w-4 inline mr-2" />
-              Purchase Cart ({purchaseItems.length})
+              Shop Products
             </button>
             <button
-              onClick={() => setActiveTab('selling')}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'selling'
+              onClick={() => setCurrentView('cart')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all relative ${
+                currentView === 'cart'
                   ? 'bg-emerald-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <DollarSign className="h-4 w-4 inline mr-2" />
-              Items for Sale ({sellingItems.length})
+              <ShoppingBag className="h-4 w-4 inline mr-2" />
+              My Cart ({items.length})
+              {items.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {items.length}
+                </span>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Purchase Cart Tab */}
-        {activeTab === 'purchase' && (
+        {/* Marketplace View */}
+        {currentView === 'marketplace' && (
           <>
-            {purchaseItems.length === 0 ? (
+            {/* Filters */}
+            <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-gray-700">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <select
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      className="pl-10 pr-8 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="leafy-greens">Leafy Greens</option>
+                      <option value="herbs">Herbs</option>
+                      <option value="fruits">Fruits & Vegetables</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-400">
+                  Showing {filteredProducts.length} of {products.length} products
+                </div>
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden hover:shadow-emerald-500/20 transition-all duration-300 transform hover:-translate-y-2 border border-gray-700">
+                  <div className="relative">
+                    <img 
+                      src={product.image_url} 
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {product.quality}
+                    </div>
+                    <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
+                      {product.stock} in stock
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-semibold text-white">{product.name}</h3>
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm text-gray-400">{product.rating}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-400 text-sm mb-4 leading-relaxed">{product.description}</p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Price:</span>
+                        <span className="font-semibold text-emerald-400 text-lg">₹{product.price}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Harvest Date:</span>
+                        <span className="font-medium text-white">{new Date(product.harvest_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>Add to Cart</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Cart View */}
+        {currentView === 'cart' && (
+          <>
+            {items.length === 0 ? (
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
                 <ShoppingBag className="h-20 w-20 text-gray-600 mx-auto mb-6" />
-                <h2 className="text-2xl font-bold text-white mb-4">Your purchase cart is empty</h2>
-                <p className="text-gray-400 mb-8">Add some fresh produce from our marketplace to get started!</p>
-                <button className="bg-emerald-600 text-white px-8 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+                <h2 className="text-2xl font-bold text-white mb-4">Your cart is empty</h2>
+                <p className="text-gray-400 mb-8">Add some fresh produce to get started!</p>
+                <button 
+                  onClick={() => setCurrentView('marketplace')}
+                  className="bg-emerald-600 text-white px-8 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
                   Browse Products
                 </button>
               </div>
@@ -188,10 +394,10 @@ const CartPage: React.FC = () => {
                 <div className="lg:col-span-2">
                   <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700">
                     <div className="p-6 border-b border-gray-700">
-                      <h2 className="text-2xl font-bold text-white">Purchase Items ({purchaseItems.length})</h2>
+                      <h2 className="text-2xl font-bold text-white">Shopping Cart ({items.length} items)</h2>
                     </div>
                     <div className="p-6 space-y-6">
-                      {purchaseItems.map((item) => (
+                      {items.map((item) => (
                         <div key={item.product.id} className="flex items-center space-x-4 bg-gray-700/30 rounded-xl p-4 border border-gray-600">
                           <img
                             src={item.product.image_url}
@@ -246,7 +452,7 @@ const CartPage: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-gray-300">
                         <span>Subtotal</span>
-                        <span>₹{purchaseTotal.toFixed(2)}</span>
+                        <span>₹{total.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-gray-300">
                         <span>Delivery</span>
@@ -255,7 +461,7 @@ const CartPage: React.FC = () => {
                       <div className="border-t border-gray-600 pt-3">
                         <div className="flex justify-between text-xl font-bold text-white">
                           <span>Total</span>
-                          <span>₹{(purchaseTotal + 50).toFixed(2)}</span>
+                          <span>₹{(total + 50).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -366,7 +572,7 @@ const CartPage: React.FC = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    disabled={isCheckingOut || purchaseItems.length === 0}
+                    disabled={isCheckingOut || items.length === 0}
                     className="w-full bg-emerald-600 text-white py-4 px-6 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center space-x-2"
                   >
                     {isCheckingOut ? (
@@ -377,7 +583,7 @@ const CartPage: React.FC = () => {
                     ) : (
                       <>
                         <CreditCard className="h-5 w-5" />
-                        <span>Place Order - ₹{(purchaseTotal + 50).toFixed(2)}</span>
+                        <span>Place Order - ₹{(total + 50).toFixed(2)}</span>
                       </>
                     )}
                   </button>
@@ -386,66 +592,7 @@ const CartPage: React.FC = () => {
             )}
           </>
         )}
-
-        {/* Selling Items Tab */}
-        {activeTab === 'selling' && (
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
-            {sellingItems.length === 0 ? (
-              <>
-                <DollarSign className="h-20 w-20 text-gray-600 mx-auto mb-6" />
-                <h2 className="text-2xl font-bold text-white mb-4">No items listed for sale</h2>
-                <p className="text-gray-400 mb-8">Go to inventory to list your products for sale!</p>
-              </>
-            ) : (
-              <>
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-4">Items Listed for Sale</h2>
-                  <div className="bg-emerald-900/30 border border-emerald-400/30 rounded-lg p-4 mb-6">
-                    <div className="flex items-center justify-between">
-                      <span className="text-emerald-400 font-medium">Total Potential Revenue:</span>
-                      <span className="text-2xl font-bold text-emerald-400">₹{sellingTotal.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  {sellingItems.map((item) => (
-                    <div key={item.product.id} className="flex items-center space-x-4 bg-gray-700/30 rounded-xl p-4 border border-gray-600">
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="flex-1 text-left">
-                        <h3 className="text-lg font-semibold text-white">{item.product.name}</h3>
-                        <p className="text-gray-400 text-sm">Listed for sale</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-emerald-400 font-bold">₹{item.product.price} each</span>
-                          <span className="text-gray-300">Quantity: {item.quantity}</span>
-                          <span className="text-emerald-400 font-bold">Total: ₹{(item.product.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-1">
-                          <Eye className="h-4 w-4" />
-                          <span>View</span>
-                        </button>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center space-x-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Remove</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
+        
         {/* Auth Modal */}
         <AuthModal 
           isOpen={isAuthModalOpen} 
