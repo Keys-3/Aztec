@@ -2,8 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, User, AuthState } from '../lib/supabase';
 
 interface AuthContextType extends AuthState {
-  signUp: (email: string, password: string, username: string, contact: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, username: string, contact: string, rememberMe?: boolean) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -22,22 +22,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle auto logout when tab/window is closed
+    // Handle auto logout when page is closed/reloaded
     const handleBeforeUnload = () => {
       const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
       if (!rememberMe) {
-        // Clear session if user doesn't want to be remembered
+        // Clear session immediately if user doesn't want to be remembered
         supabase.auth.signOut();
         localStorage.removeItem('aztec-remember-me');
+        localStorage.removeItem('aztec-hidden-timestamp');
+        localStorage.removeItem('aztec-cart');
+        localStorage.removeItem('aztec-selling');
       }
     };
 
-    // Handle visibility change (tab switching, minimizing)
+    // Handle page visibility changes (tab switching, minimizing, etc.)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
         if (!rememberMe) {
-          // Set a timestamp when the tab becomes hidden
+          // Set timestamp when tab becomes hidden for non-remembered users
           localStorage.setItem('aztec-hidden-timestamp', Date.now().toString());
         }
       } else if (document.visibilityState === 'visible') {
@@ -46,10 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!rememberMe && hiddenTimestamp) {
           const hiddenTime = Date.now() - parseInt(hiddenTimestamp);
-          // Auto logout if tab was hidden for more than 30 minutes (1800000 ms)
-          if (hiddenTime > 1800000) {
+          // Auto logout if tab was hidden for more than 15 minutes (900000 ms)
+          if (hiddenTime > 900000) {
             supabase.auth.signOut();
             localStorage.removeItem('aztec-hidden-timestamp');
+            localStorage.removeItem('aztec-remember-me');
+            localStorage.removeItem('aztec-cart');
+            localStorage.removeItem('aztec-selling');
           }
         }
         
@@ -57,27 +63,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Handle page unload (refresh, navigation, close)
+    const handleUnload = () => {
+      const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
+      if (!rememberMe) {
+        // Clear all session data for non-remembered users
+        localStorage.removeItem('aztec-remember-me');
+        localStorage.removeItem('aztec-hidden-timestamp');
+        localStorage.removeItem('aztec-cart');
+        localStorage.removeItem('aztec-selling');
+        // Note: supabase.auth.signOut() might not complete during unload
+        // but the session will be cleared on next load due to missing localStorage flags
+      }
+    };
+
+    // Add event listeners
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Get initial session
+    // Check for existing session on app load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+      const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
+      
+      if (session?.user && rememberMe) {
+        // User has valid session and wants to be remembered
         fetchUserProfile(session.user.id);
+      } else if (session?.user && !rememberMe) {
+        // User has session but doesn't want to be remembered - sign them out
+        supabase.auth.signOut();
+        setLoading(false);
       } else {
+        // No session found
         setLoading(false);
       }
     });
 
-    // Listen for auth changes
+    // Listen for authentication state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
-      } else {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
+        if (rememberMe) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          // If not remembering, still fetch profile but set up for auto-logout
+          await fetchUserProfile(session.user.id);
+        }
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        // Clear remember me flag when user is logged out
+        // Clear all session-related data
         localStorage.removeItem('aztec-remember-me');
         localStorage.removeItem('aztec-hidden-timestamp');
+        setLoading(false);
+      } else {
+        setUser(null);
         setLoading(false);
       }
     });
@@ -85,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -98,9 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        // If no profile exists, set user to null instead of throwing error
+        // If no profile exists, user might be in auth but not in our user_profiles table
         if (error.code === 'PGRST116') {
+          console.warn('User authenticated but no profile found');
           setUser(null);
+          // Sign out the user since they don't have a complete profile
+          await supabase.auth.signOut();
           return;
         }
         throw error;
@@ -110,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUser(null);
+      // Sign out on profile fetch error
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }
@@ -117,6 +162,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, username: string, contact: string, rememberMe = false) => {
     try {
+      // Set remember preference before signup
+      localStorage.setItem('aztec-remember-me', rememberMe.toString());
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -125,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) return { error };
 
       if (data.user) {
-        // Create user profile
+        // Create user profile in our custom table
         const { error: profileError } = await supabase
           .from('user_profiles')
           .insert([
@@ -137,40 +185,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           ]);
 
-        if (profileError) return { error: profileError };
-
-        // Set remember me preference
-        localStorage.setItem('aztec-remember-me', rememberMe.toString());
+        if (profileError) {
+          // If profile creation fails, clean up the auth user
+          await supabase.auth.signOut();
+          localStorage.removeItem('aztec-remember-me');
+          return { error: profileError };
+        }
       }
 
       return { error: null };
     } catch (error) {
+      localStorage.removeItem('aztec-remember-me');
       return { error };
     }
   };
 
   const signIn = async (email: string, password: string, rememberMe = false) => {
     try {
+      // Set remember preference before signin
+      localStorage.setItem('aztec-remember-me', rememberMe.toString());
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (!error) {
-        // Set remember me preference
-        localStorage.setItem('aztec-remember-me', rememberMe.toString());
+      if (error) {
+        // Clear remember preference on signin error
+        localStorage.removeItem('aztec-remember-me');
       }
 
       return { error };
     } catch (error) {
+      localStorage.removeItem('aztec-remember-me');
       return { error };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Clear all local storage data
     localStorage.removeItem('aztec-remember-me');
     localStorage.removeItem('aztec-hidden-timestamp');
+    localStorage.removeItem('aztec-cart');
+    localStorage.removeItem('aztec-selling');
+    
+    // Sign out from Supabase
+    await supabase.auth.signOut();
     setUser(null);
   };
 

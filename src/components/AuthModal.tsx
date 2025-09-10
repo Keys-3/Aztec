@@ -204,13 +204,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                Keep me signed in
+                Remember me on this device
               </label>
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {rememberMe 
-                ? "You'll stay signed in until you manually sign out" 
-                : "You'll be automatically signed out when you close the browser or after 30 minutes of inactivity"
+                ? "You'll stay signed in on this device until you manually sign out" 
+                : "You'll be automatically signed out when you close/refresh the page or after 15 minutes of inactivity"
               }
             </p>
             <button
