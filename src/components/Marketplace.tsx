@@ -27,7 +27,7 @@ const Marketplace: React.FC = () => {
     action: 'sell',
     quantity: 1
   });
-  const { addToCart, addToSelling, sellingItems } = useCart();
+  const { addToCart, addToSelling, removeFromSelling, sellingItems } = useCart();
   const { user } = useAuth();
 
   const products = [
