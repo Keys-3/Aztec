@@ -25,7 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Handle auto logout when page is closed/reloaded
     const handleBeforeUnload = () => {
       const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-      if (!rememberMe) {
+      const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
+      
+      if (!rememberMe && !isNewSignup) {
         // Clear session immediately if user doesn't want to be remembered
         supabase.auth.signOut();
         localStorage.removeItem('aztec-remember-me');
@@ -39,15 +41,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-        if (!rememberMe) {
+        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
+        
+        if (!rememberMe && !isNewSignup) {
           // Set timestamp when tab becomes hidden for non-remembered users
           localStorage.setItem('aztec-hidden-timestamp', Date.now().toString());
         }
       } else if (document.visibilityState === 'visible') {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
+        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
         const hiddenTimestamp = localStorage.getItem('aztec-hidden-timestamp');
         
-        if (!rememberMe && hiddenTimestamp) {
+        if (!rememberMe && !isNewSignup && hiddenTimestamp) {
           const hiddenTime = Date.now() - parseInt(hiddenTimestamp);
           // Auto logout if tab was hidden for more than 15 minutes (900000 ms)
           if (hiddenTime > 900000) {
@@ -56,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.removeItem('aztec-remember-me');
             localStorage.removeItem('aztec-cart');
             localStorage.removeItem('aztec-selling');
+            sessionStorage.removeItem('aztec-new-signup');
           }
         }
         
@@ -66,7 +72,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Handle page unload (refresh, navigation, close)
     const handleUnload = () => {
       const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-      if (!rememberMe) {
+      const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
+      
+      if (!rememberMe && !isNewSignup) {
         // Clear all session data for non-remembered users
         localStorage.removeItem('aztec-remember-me');
         localStorage.removeItem('aztec-hidden-timestamp');
@@ -89,10 +97,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user && rememberMe) {
         // User has valid session and wants to be remembered
         fetchUserProfile(session.user.id);
-      } else if (session?.user && !rememberMe) {
-        // User has session but doesn't want to be remembered - sign them out
-        supabase.auth.signOut();
-        setLoading(false);
+      } else if (session?.user) {
+        // Check if this is a fresh signup (user just created account)
+        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
+        
+        if (isNewSignup) {
+          // Allow new signups to stay logged in temporarily
+          fetchUserProfile(session.user.id);
+          sessionStorage.removeItem('aztec-new-signup');
+        } else if (!rememberMe) {
+          // User has session but doesn't want to be remembered - sign them out
+          supabase.auth.signOut();
+          setLoading(false);
+        } else {
+          fetchUserProfile(session.user.id);
+        }
       } else {
         // No session found
         setLoading(false);
@@ -103,7 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-        if (rememberMe) {
+        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
+        
+        if (rememberMe || isNewSignup) {
           await fetchUserProfile(session.user.id);
         } else {
           // If not remembering, still fetch profile but set up for auto-logout
@@ -114,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear all session-related data
         localStorage.removeItem('aztec-remember-me');
         localStorage.removeItem('aztec-hidden-timestamp');
+        sessionStorage.removeItem('aztec-new-signup');
         setLoading(false);
       } else {
         setUser(null);
@@ -164,6 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Set remember preference before signup
       localStorage.setItem('aztec-remember-me', rememberMe.toString());
+      // Mark this as a new signup to prevent immediate logout
+      sessionStorage.setItem('aztec-new-signup', 'true');
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -191,6 +215,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem('aztec-remember-me');
           return { error: profileError };
         }
+
+        // Immediately fetch and set the user profile after successful signup
+        await fetchUserProfile(data.user.id);
       }
 
       return { error: null };
@@ -209,8 +236,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       });
+          sessionStorage.removeItem('aztec-new-signup');
 
       if (error) {
+        sessionStorage.removeItem('aztec-new-signup');
         // Clear remember preference on signin error
         localStorage.removeItem('aztec-remember-me');
       }
@@ -218,6 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error };
     } catch (error) {
       localStorage.removeItem('aztec-remember-me');
+      sessionStorage.removeItem('aztec-new-signup');
       return { error };
     }
   };
@@ -228,6 +258,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('aztec-hidden-timestamp');
     localStorage.removeItem('aztec-cart');
     localStorage.removeItem('aztec-selling');
+    sessionStorage.removeItem('aztec-new-signup');
     
     // Sign out from Supabase
     await supabase.auth.signOut();
