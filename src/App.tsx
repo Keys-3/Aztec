@@ -1,26 +1,46 @@
-import { useAuth } from "./contexts/AuthContext";
-import { supabase } from "./lib/supabase";
+import React, { useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
+import Navigation from './components/Navigation';
+import HomePage from './components/HomePage';
+import Dashboard from './components/Dashboard';
+import Marketplace from './components/Marketplace';
+import CartPage from './components/CartPage';
+import ContactPage from './components/ContactPage';
+import Footer from './components/Footer';
 
 function App() {
-  const { user, loading } = useAuth();
+  const [currentPage, setCurrentPage] = useState('home');
 
-  if (loading) return <p>Checking authentication...</p>;
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return <HomePage />;
+      case 'dashboard':
+        return <Dashboard />;
+      case 'marketplace':
+        return <Marketplace />;
+      case 'cart':
+        return <CartPage />;
+      case 'contact':
+        return <ContactPage />;
+      default:
+        return <HomePage />;
+    }
+  };
 
   return (
-    <div>
-      {user ? (
-        <>
-          <h1>Welcome {user.email}</h1>
-          <button onClick={() => supabase.auth.signOut()}>Logout</button>
-        </>
-      ) : (
-        <button
-          onClick={() => supabase.auth.signInWithOAuth({ provider: "google" })}
-        >
-          Login with Google
-        </button>
-      )}
-    </div>
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+          <main>
+            {renderPage()}
+          </main>
+          <Footer />
+        </div>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 
