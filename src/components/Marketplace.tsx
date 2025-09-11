@@ -9,12 +9,12 @@ const Marketplace: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [inventoryStock, setInventoryStock] = useState<{[key: string]: number}>({
-    'prod-1': 25,
-    'prod-2': 18,
-    'prod-3': 32,
-    'prod-4': 22,
-    'prod-5': 15,
-    'prod-6': 28
+    '550e8400-e29b-41d4-a716-446655440001': 25,
+    '550e8400-e29b-41d4-a716-446655440002': 18,
+    '550e8400-e29b-41d4-a716-446655440003': 32,
+    '550e8400-e29b-41d4-a716-446655440004': 22,
+    '550e8400-e29b-41d4-a716-446655440005': 15,
+    '550e8400-e29b-41d4-a716-446655440006': 28
   });
   const [quantityModal, setQuantityModal] = useState<{
     isOpen: boolean;
@@ -32,11 +32,11 @@ const Marketplace: React.FC = () => {
 
   const products = [
     {
-      id: 'prod-1',
+      id: '550e8400-e29b-41d4-a716-446655440001',
       name: 'Organic Lettuce',
       category: 'leafy-greens',
       price: 399,
-      stock: inventoryStock['prod-1'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440001'],
       image: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
       harvest_date: '2025-01-10',
       quality: 'Premium',
@@ -45,11 +45,11 @@ const Marketplace: React.FC = () => {
       image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg'
     },
     {
-      id: 'prod-2',
+      id: '550e8400-e29b-41d4-a716-446655440002',
       name: 'Cherry Tomatoes',
       category: 'fruits',
       price: 559,
-      stock: inventoryStock['prod-2'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440002'],
       image: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
       harvest_date: '2025-01-08',
       quality: 'Premium',
@@ -58,11 +58,11 @@ const Marketplace: React.FC = () => {
       image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg'
     },
     {
-      id: 'prod-3',
+      id: '550e8400-e29b-41d4-a716-446655440003',
       name: 'Fresh Basil',
       category: 'herbs',
       price: 279,
-      stock: inventoryStock['prod-3'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440003'],
       image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
       harvest_date: '2025-01-12',
       quality: 'Premium',
@@ -71,11 +71,11 @@ const Marketplace: React.FC = () => {
       image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg'
     },
     {
-      id: 'prod-4',
+      id: '550e8400-e29b-41d4-a716-446655440004',
       name: 'Baby Spinach',
       category: 'leafy-greens',
       price: 439,
-      stock: inventoryStock['prod-4'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440004'],
       image: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
       harvest_date: '2025-01-09',
       quality: 'Premium',
@@ -84,11 +84,11 @@ const Marketplace: React.FC = () => {
       image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg'
     },
     {
-      id: 'prod-5',
+      id: '550e8400-e29b-41d4-a716-446655440005',
       name: 'Mixed Herbs Bundle',
       category: 'herbs',
       price: 719,
-      stock: inventoryStock['prod-5'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440005'],
       image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
       harvest_date: '2025-01-11',
       quality: 'Premium',
@@ -97,11 +97,11 @@ const Marketplace: React.FC = () => {
       image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg'
     },
     {
-      id: 'prod-6',
+      id: '550e8400-e29b-41d4-a716-446655440006',
       name: 'Cucumber',
       category: 'fruits',
       price: 239,
-      stock: inventoryStock['prod-6'],
+      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440006'],
       image: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
       harvest_date: '2025-01-13',
       quality: 'Premium',

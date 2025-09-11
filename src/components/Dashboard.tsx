@@ -15,7 +15,7 @@ const Dashboard: React.FC = () => {
     } else {
       // Add sample product to cart
       const sampleProduct = {
-        id: 'sample-1',
+        id: '550e8400-e29b-41d4-a716-446655440007',
         name: 'Fresh Lettuce',
         category: 'leafy-greens',
         price: 399,
