@@ -104,29 +104,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isNewSignup) {
           // Allow new signups to stay logged in temporarily
           fetchUserProfile(session.user.id);
-          sessionStorage.removeItem('aztec-new-signup');
         } else if (!rememberMe) {
           // User has session but doesn't want to be remembered - sign them out
-          supabase.auth.signOut();
-          setLoading(false);
+          supabase.auth.signOut().then(() => {
+            setUser(null);
+            setLoading(false);
+          });
         } else {
           fetchUserProfile(session.user.id);
         }
       } else {
         // No session found
+        setUser(null);
         setLoading(false);
       }
     });
 
     // Listen for authentication state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
       if (event === 'SIGNED_IN' && session?.user) {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
         const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
         
         if (rememberMe || isNewSignup) {
           await fetchUserProfile(session.user.id);
+          // Clear new signup flag after successful profile fetch
+          if (isNewSignup) {
+            sessionStorage.removeItem('aztec-new-signup');
+          }
         } else {
           // If not remembering, still fetch profile but set up for auto-logout
           await fetchUserProfile(session.user.id);
@@ -139,6 +144,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.removeItem('aztec-new-signup');
         setLoading(false);
       } else {
+        // Handle other auth events (like token refresh failures)
+        if (!session?.user) {
+          setUser(null);
+        }
         setLoading(false);
       }
     });
@@ -152,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -166,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Sign out the user since they don't have a complete profile
           await supabase.auth.signOut();
           setUser(null);
+          setLoading(false);
           return;
         }
         throw error;
@@ -236,10 +247,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       });
-          sessionStorage.removeItem('aztec-new-signup');
+      
+      // Clear any existing new signup flag
+      sessionStorage.removeItem('aztec-new-signup');
 
       if (error) {
-        sessionStorage.removeItem('aztec-new-signup');
         // Clear remember preference on signin error
         localStorage.removeItem('aztec-remember-me');
       }
@@ -247,7 +259,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error };
     } catch (error) {
       localStorage.removeItem('aztec-remember-me');
-      sessionStorage.removeItem('aztec-new-signup');
       return { error };
     }
   };

@@ -24,7 +24,7 @@ const AppContent: React.FC = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading...</p>
+          <p className="text-white text-lg">Checking authentication...</p>
         </div>
       </div>
     );
