@@ -120,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for authentication state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
       if (event === 'SIGNED_IN' && session?.user) {
         const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
         const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
@@ -138,7 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.removeItem('aztec-new-signup');
         setLoading(false);
       } else {
-        setUser(null);
         setLoading(false);
       }
     });
@@ -163,9 +163,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no profile exists, user might be in auth but not in our user_profiles table
         if (error.code === 'PGRST116') {
           console.warn('User authenticated but no profile found');
-          setUser(null);
           // Sign out the user since they don't have a complete profile
           await supabase.auth.signOut();
+          setUser(null);
           return;
         }
         throw error;
@@ -174,9 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      setUser(null);
       // Sign out on profile fetch error
       await supabase.auth.signOut();
+      setUser(null);
     } finally {
       setLoading(false);
     }
