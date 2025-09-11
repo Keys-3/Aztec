@@ -1,148 +1,393 @@
-import React from 'react';
-import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone, ShoppingCart } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
-import UserProfile from './UserProfile';
-import AuthModal from './AuthModal';
-import logo from "../assets/logo.png";
-interface NavigationProps {
-  currentPage: string;
-  onPageChange: (page: string) => void;
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase, User, AuthState, AuthSession, generateSessionToken, getSessionExpiry, getDeviceInfo } from '../lib/supabase';
+
+interface AuthContextType extends AuthState {
+  signUp: (email: string, password: string, username: string, contact: string, rememberMe?: boolean) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
-  const { user, loading } = useAuth();
-  const { itemCount } = useCart();
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  const navigationItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'marketplace', label: 'Inventory', icon: ShoppingBag },
-    { id: 'cart', label: 'Cart', icon: ShoppingCart },
-    { id: 'contact', label: 'Contact', icon: Phone },
-  ];
-
-  return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onPageChange('home')}>
-            <img src={logo} alt="logo" className="h-14 w-14" />
-            <span className="text-2xl font-bold text-emerald-600 sm:inline">Aztec</span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigationItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onPageChange(item.id)}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 relative ${
-                  currentPage === item.id
-                    ? 'text-emerald-600 bg-emerald-50'
-                    : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
-                } flex items-center space-x-2`}
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
-                {item.id === 'cart' && itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </button>
-            ))}
-            
-            {/* Auth Section */}
-            <div className="flex items-center space-x-4">
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600">Loading...</span>
-                </div>
-              ) : user ? (
-                <UserProfile />
-              ) : (
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-gray-700 hover:text-emerald-600 focus:outline-none"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden pb-4">
-            <div className="px-3 py-2 border-b border-gray-200 mb-2">
-              {loading ? (
-                <div className="flex items-center justify-center py-2 space-x-2">
-                  <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600">Loading...</span>
-                </div>
-              ) : user ? (
-                <UserProfile />
-              ) : (
-                <button
-                  onClick={() => {
-                    setIsAuthModalOpen(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
-            
-            {navigationItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onPageChange(item.id);
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`block w-full text-left px-3 py-2 text-base font-medium transition-colors duration-200 relative ${
-                  currentPage === item.id
-                    ? 'text-emerald-600 bg-emerald-50'
-                    : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
-                } flex items-center space-x-2`}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-                {item.id === 'cart' && itemCount > 0 && (
-                  <span className="absolute top-2 right-4 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-        
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-        />
-      </div>
-    </nav>
-  );
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
-export default Navigation;
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionCheckComplete, setSessionCheckComplete] = useState(false);
+
+  // Cleanup expired sessions
+  const cleanupExpiredSessions = async () => {
+    try {
+      const { error } = await supabase
+        .from('auth_sessions')
+        .delete()
+        .lt('expires_at', new Date().toISOString());
+      
+      if (error) {
+        console.warn('Failed to cleanup expired sessions:', error);
+      }
+    } catch (error) {
+      console.warn('Error during session cleanup:', error);
+    }
+  };
+
+  // Create or update session in database
+  const createSession = async (userId: string, rememberMe: boolean) => {
+    try {
+      const sessionToken = generateSessionToken();
+      const expiresAt = getSessionExpiry(rememberMe);
+      const deviceInfo = getDeviceInfo();
+
+      const { error } = await supabase
+        .from('auth_sessions')
+        .insert([{
+          user_id: userId,
+          session_token: sessionToken,
+          expires_at: expiresAt,
+          remember_me: rememberMe,
+          device_info: deviceInfo
+        }]);
+
+      if (error) {
+        console.error('Failed to create session:', error);
+        return null;
+      }
+
+      // Store session token locally
+      if (rememberMe) {
+        localStorage.setItem('aztec-session-token', sessionToken);
+        localStorage.setItem('aztec-remember-me', 'true');
+      } else {
+        sessionStorage.setItem('aztec-session-token', sessionToken);
+        localStorage.setItem('aztec-remember-me', 'false');
+      }
+
+      return sessionToken;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      return null;
+    }
+  };
+
+  // Validate session from database
+  const validateSession = async (sessionToken: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('auth_sessions')
+        .select(`
+          *,
+          user_profiles (*)
+        `)
+        .eq('session_token', sessionToken)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Update last activity
+      await supabase
+        .from('auth_sessions')
+        .update({ last_activity: new Date().toISOString() })
+        .eq('session_token', sessionToken);
+
+      return data.user_profiles as User;
+    } catch (error) {
+      console.error('Error validating session:', error);
+      return null;
+    }
+  };
+
+  // Clear all sessions for user
+  const clearUserSessions = async (userId?: string) => {
+    if (!userId && !user) return;
+    
+    try {
+      await supabase
+        .from('auth_sessions')
+        .delete()
+        .eq('user_id', userId || user!.id);
+    } catch (error) {
+      console.error('Error clearing user sessions:', error);
+    }
+  };
+
+  // Initialize authentication state
+  useEffect(() => {
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    const initializeAuth = async () => {
+      try {
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.warn('Auth initialization timeout - setting loading to false');
+            setLoading(false);
+            setSessionCheckComplete(true);
+          }
+        }, 10000); // 10 second timeout
+
+        // Cleanup expired sessions first
+        await cleanupExpiredSessions();
+
+        // Check for existing session token
+        const sessionToken = localStorage.getItem('aztec-session-token') || 
+                            sessionStorage.getItem('aztec-session-token');
+
+        if (sessionToken) {
+          // Validate session from database
+          const validatedUser = await validateSession(sessionToken);
+          
+          if (validatedUser && mounted) {
+            setUser(validatedUser);
+          } else {
+            // Invalid session, clear tokens
+            localStorage.removeItem('aztec-session-token');
+            sessionStorage.removeItem('aztec-session-token');
+            localStorage.removeItem('aztec-remember-me');
+          }
+        } else {
+          // Check Supabase auth session as fallback
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user && mounted) {
+            // Fetch user profile
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile) {
+              setUser(profile);
+              // Create new session in database
+              await createSession(profile.id, false);
+            }
+          }
+        }
+
+        if (mounted) {
+          clearTimeout(timeoutId);
+          setLoading(false);
+          setSessionCheckComplete(true);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          clearTimeout(timeoutId);
+          setLoading(false);
+          setSessionCheckComplete(true);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for Supabase auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted || !sessionCheckComplete) return;
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('aztec-session-token');
+        sessionStorage.removeItem('aztec-session-token');
+        localStorage.removeItem('aztec-remember-me');
+        localStorage.removeItem('aztec-cart');
+        localStorage.removeItem('aztec-selling');
+      }
+    });
+
+    // Handle page visibility changes for session management
+    const handleVisibilityChange = async () => {
+      if (!mounted || !sessionCheckComplete) return;
+
+      if (document.visibilityState === 'visible' && user) {
+        // Refresh session when page becomes visible
+        await refreshSession();
+      }
+    };
+
+    // Handle page unload
+    const handleBeforeUnload = () => {
+      const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
+      if (!rememberMe) {
+        // Clear session storage for non-remembered sessions
+        sessionStorage.removeItem('aztec-session-token');
+        localStorage.removeItem('aztec-cart');
+        localStorage.removeItem('aztec-selling');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
+  const signUp = async (email: string, password: string, username: string, contact: string, rememberMe = false) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) return { error };
+
+      if (data.user) {
+        // Create user profile
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert([{
+            id: data.user.id,
+            email,
+            username,
+            contact,
+          }]);
+
+        if (profileError) {
+          await supabase.auth.signOut();
+          return { error: profileError };
+        }
+
+        // Fetch the created profile
+        const userProfile = await fetchUserProfile(data.user.id);
+        if (userProfile) {
+          setUser(userProfile);
+          await createSession(userProfile.id, rememberMe);
+        }
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string, rememberMe = false) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) return { error };
+
+      if (data.user) {
+        const userProfile = await fetchUserProfile(data.user.id);
+        if (userProfile) {
+          setUser(userProfile);
+          await createSession(userProfile.id, rememberMe);
+        } else {
+          await supabase.auth.signOut();
+          return { error: { message: 'User profile not found' } };
+        }
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setLoading(true);
+
+      // Clear user sessions from database
+      if (user) {
+        await clearUserSessions(user.id);
+      }
+
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+
+      // Clear local storage
+      localStorage.removeItem('aztec-session-token');
+      sessionStorage.removeItem('aztec-session-token');
+      localStorage.removeItem('aztec-remember-me');
+      localStorage.removeItem('aztec-cart');
+      localStorage.removeItem('aztec-selling');
+
+      setUser(null);
+    } catch (error) {
+      console.error('Error during sign out:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshSession = async () => {
+    if (!user) return;
+
+    try {
+      const sessionToken = localStorage.getItem('aztec-session-token') || 
+                          sessionStorage.getItem('aztec-session-token');
+
+      if (sessionToken) {
+        const validatedUser = await validateSession(sessionToken);
+        if (!validatedUser) {
+          // Session expired or invalid, sign out
+          await signOut();
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      await signOut();
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    refreshSession,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
