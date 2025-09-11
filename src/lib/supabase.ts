@@ -9,6 +9,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Session management utilities
+export const generateSessionToken = () => {
+  return crypto.randomUUID() + '-' + Date.now().toString(36);
+};
+
+export const getSessionExpiry = (rememberMe: boolean) => {
+  const now = new Date();
+  if (rememberMe) {
+    // 30 days for remembered sessions
+    now.setDate(now.getDate() + 30);
+  } else {
+    // 24 hours for regular sessions
+    now.setHours(now.getHours() + 24);
+  }
+  return now.toISOString();
+};
+
+export const getDeviceInfo = () => {
+  return {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+    timestamp: new Date().toISOString()
+  };
+};
 export type User = {
   id: string;
   email: string;
@@ -17,6 +42,17 @@ export type User = {
   created_at: string;
 };
 
+export type AuthSession = {
+  id: string;
+  user_id: string;
+  session_token: string;
+  expires_at: string;
+  remember_me: boolean;
+  device_info: any;
+  last_activity: string;
+  created_at: string;
+  updated_at: string;
+};
 export type Product = {
   id: string;
   name: string;

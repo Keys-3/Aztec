@@ -45,7 +45,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       if (mode === 'login') {
         const { error } = await signIn(formData.email, formData.password, rememberMe);
         if (error) {
-          setMessage({ type: 'error', text: error.message || 'Login failed' });
+          setMessage({ type: 'error', text: error.message || 'Login failed. Please check your credentials.' });
         } else {
           setMessage({ type: 'success', text: 'Login successful!' });
           setTimeout(() => handleClose(), 1500);
@@ -53,14 +53,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       } else {
         const { error } = await signUp(formData.email, formData.password, formData.username, formData.contact, rememberMe);
         if (error) {
-          setMessage({ type: 'error', text: error.message || 'Signup failed' });
+          setMessage({ type: 'error', text: error.message || 'Signup failed. Please try again.' });
         } else {
           setMessage({ type: 'success', text: 'Account created successfully!' });
           setTimeout(() => handleClose(), 1500);
         }
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An unexpected error occurred' });
+      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
     }

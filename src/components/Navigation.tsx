@@ -58,7 +58,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
             {/* Auth Section */}
             <div className="flex items-center space-x-4">
               {loading ? (
-                <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-600">Loading...</span>
+                </div>
               ) : user ? (
                 <UserProfile />
               ) : (
@@ -88,8 +91,9 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
           <div className="md:hidden pb-4">
             <div className="px-3 py-2 border-b border-gray-200 mb-2">
               {loading ? (
-                <div className="flex items-center justify-center py-2">
-                  <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex items-center justify-center py-2 space-x-2">
+                  <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-600">Loading...</span>
                 </div>
               ) : user ? (
                 <UserProfile />
