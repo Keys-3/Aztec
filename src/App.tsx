@@ -1,5 +1,5 @@
 import { useAuth } from "./contexts/AuthContext";
-import { supabase } from "./lib/supabaseClient";
+import { supabase } from "./lib/supabase";
 
 function App() {
   const { user, loading } = useAuth();
