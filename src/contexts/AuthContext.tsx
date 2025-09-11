@@ -92,27 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session on app load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-      
-      if (session?.user && rememberMe) {
-        // User has valid session and wants to be remembered
+      if (session?.user) {
+        // User has valid session, fetch their profile
         fetchUserProfile(session.user.id);
-      } else if (session?.user) {
-        // Check if this is a fresh signup (user just created account)
-        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
-        
-        if (isNewSignup) {
-          // Allow new signups to stay logged in temporarily
-          fetchUserProfile(session.user.id);
-        } else if (!rememberMe) {
-          // User has session but doesn't want to be remembered - sign them out
-          supabase.auth.signOut().then(() => {
-            setUser(null);
-            setLoading(false);
-          });
-        } else {
-          fetchUserProfile(session.user.id);
-        }
       } else {
         // No session found
         setUser(null);
@@ -123,19 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for authentication state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const rememberMe = localStorage.getItem('aztec-remember-me') === 'true';
-        const isNewSignup = sessionStorage.getItem('aztec-new-signup') === 'true';
-        
-        if (rememberMe || isNewSignup) {
-          await fetchUserProfile(session.user.id);
-          // Clear new signup flag after successful profile fetch
-          if (isNewSignup) {
-            sessionStorage.removeItem('aztec-new-signup');
-          }
-        } else {
-          // If not remembering, still fetch profile but set up for auto-logout
-          await fetchUserProfile(session.user.id);
-        }
+        await fetchUserProfile(session.user.id);
+        // Clear new signup flag after successful profile fetch
+        sessionStorage.removeItem('aztec-new-signup');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         // Clear all session-related data
@@ -197,8 +169,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Set remember preference before signup
       localStorage.setItem('aztec-remember-me', rememberMe.toString());
-      // Mark this as a new signup to prevent immediate logout
-      sessionStorage.setItem('aztec-new-signup', 'true');
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -248,9 +218,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       
-      // Clear any existing new signup flag
-      sessionStorage.removeItem('aztec-new-signup');
-
       if (error) {
         // Clear remember preference on signin error
         localStorage.removeItem('aztec-remember-me');
@@ -269,7 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('aztec-hidden-timestamp');
     localStorage.removeItem('aztec-cart');
     localStorage.removeItem('aztec-selling');
-    sessionStorage.removeItem('aztec-new-signup');
     
     // Sign out from Supabase
     await supabase.auth.signOut();
