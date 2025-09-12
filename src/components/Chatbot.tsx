@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'
 import { MessageCircle, Send, X, Bot, User, Lightbulb, Droplets, Thermometer, Leaf } from 'lucide-react';
 
 interface Message {
