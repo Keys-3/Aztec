@@ -1,11 +1,13 @@
 import React from 'react';
-import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart } from 'lucide-react';
+import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import AuthModal from './AuthModal';
+import Chatbot from './Chatbot';
 
 const Dashboard: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = React.useState(false);
   const { user } = useAuth();
   const { addToCart } = useCart();
 
@@ -375,6 +377,25 @@ const Dashboard: React.FC = () => {
           isOpen={isAuthModalOpen} 
           onClose={() => setIsAuthModalOpen(false)} 
         />
+        
+        {/* Chatbot */}
+        <Chatbot 
+          isOpen={isChatbotOpen} 
+          onClose={() => setIsChatbotOpen(false)} 
+        />
+        
+        {/* Floating Chatbot Button */}
+        {!isChatbotOpen && (
+          <button
+            onClick={() => setIsChatbotOpen(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center z-40"
+          >
+            <MessageCircle className="h-6 w-6" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );
