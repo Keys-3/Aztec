@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle, Users, Award, Target, Zap } from 'lucide-react';
 import photo from "../assets/system.png";
-import profile from "../assets/profile.png";
 
 const ContactPage: React.FC = () => {
   const [contactForm, setContactForm] = useState({
@@ -27,7 +26,7 @@ const ContactPage: React.FC = () => {
     {
       name: 'Avnishka Bhardwaj',
       role: 'Team Manager',
-      image: {profile},
+      image: '../assets/profile.png',
       bio: '3rd Year B.Tech (C.S.E) student.'
     },
     {
@@ -340,7 +339,7 @@ const ContactPage: React.FC = () => {
               {teamMembers.map((member, index) => (
                 <div key={index} className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                   <img 
-                    src={profile} 
+                    src={member.image} 
                     alt={member.name}
                     className="w-20 h-20 rounded-full object-cover mx-auto mb-4"
                   />
