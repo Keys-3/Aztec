@@ -340,7 +340,7 @@ const ContactPage: React.FC = () => {
               {teamMembers.map((member, index) => (
                 <div key={index} className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                   <img 
-                    src={member.image} 
+                    src={profile} 
                     alt={member.name}
                     className="w-20 h-20 rounded-full object-cover mx-auto mb-4"
                   />
