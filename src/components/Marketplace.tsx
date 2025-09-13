@@ -2,20 +2,15 @@ import React, { useState } from 'react';
 import { Package, TrendingUp, Calendar, MapPin, Filter, Search, Star, ShoppingCart, DollarSign, Shield, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getUserInventory, getUserShopListings, updateInventoryQuantity, createShopListing, removeShopListing, getAllShopListings } from '../lib/supabase';
 import AuthModal from './AuthModal';
 
 const Marketplace: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [inventoryStock, setInventoryStock] = useState<{[key: string]: number}>({
-    '550e8400-e29b-41d4-a716-446655440001': 25,
-    '550e8400-e29b-41d4-a716-446655440002': 18,
-    '550e8400-e29b-41d4-a716-446655440003': 32,
-    '550e8400-e29b-41d4-a716-446655440004': 22,
-    '550e8400-e29b-41d4-a716-446655440005': 15,
-    '550e8400-e29b-41d4-a716-446655440006': 28
-  });
+  const [loading, setLoading] = useState(false);
+  const [allShopListings, setAllShopListings] = useState<any[]>([]);
   const [quantityModal, setQuantityModal] = useState<{
     isOpen: boolean;
     product: any;
@@ -27,7 +22,7 @@ const Marketplace: React.FC = () => {
     action: 'sell',
     quantity: 1
   });
-  const { addToCart, addToSelling, removeFromSelling, sellingItems } = useCart();
+  const { addToCart, sellingItems, inventory, shopListings, loadUserData, updateInventoryQuantity: updateCartInventory, getInventoryQuantity, getShopQuantity } = useCart();
   const { user } = useAuth();
 
   const products = [
@@ -36,7 +31,7 @@ const Marketplace: React.FC = () => {
       name: 'Organic Lettuce',
       category: 'leafy-greens',
       price: 399,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440001'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440001'),
       image: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
       harvest_date: '2025-01-10',
       quality: 'Premium',
@@ -49,7 +44,7 @@ const Marketplace: React.FC = () => {
       name: 'Cherry Tomatoes',
       category: 'fruits',
       price: 559,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440002'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440002'),
       image: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
       harvest_date: '2025-01-08',
       quality: 'Premium',
@@ -62,7 +57,7 @@ const Marketplace: React.FC = () => {
       name: 'Fresh Basil',
       category: 'herbs',
       price: 279,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440003'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440003'),
       image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
       harvest_date: '2025-01-12',
       quality: 'Premium',
@@ -75,7 +70,7 @@ const Marketplace: React.FC = () => {
       name: 'Baby Spinach',
       category: 'leafy-greens',
       price: 439,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440004'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440004'),
       image: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
       harvest_date: '2025-01-09',
       quality: 'Premium',
@@ -88,7 +83,7 @@ const Marketplace: React.FC = () => {
       name: 'Mixed Herbs Bundle',
       category: 'herbs',
       price: 719,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440005'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440005'),
       image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
       harvest_date: '2025-01-11',
       quality: 'Premium',
@@ -101,7 +96,7 @@ const Marketplace: React.FC = () => {
       name: 'Cucumber',
       category: 'fruits',
       price: 239,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440006'],
+      stock: getInventoryQuantity('550e8400-e29b-41d4-a716-446655440006'),
       image: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
       harvest_date: '2025-01-13',
       quality: 'Premium',
@@ -111,15 +106,10 @@ const Marketplace: React.FC = () => {
     }
   ];
 
-  // Get selling stock for each product
-  const getSellingStock = (productId: string) => {
-    const sellingItem = sellingItems.find(item => item.product.id === productId);
-    return sellingItem ? sellingItem.quantity : 0;
-  };
 
   const storageStats = [
     { name: 'Total Storage Capacity', value: '500 kg', icon: Package },
-    { name: 'Current Stock', value: `${Object.values(inventoryStock).reduce((a, b) => a + b, 0)} units`, icon: TrendingUp },
+    { name: 'Current Stock', value: `${inventory.reduce((sum, item) => sum + item.quantity, 0)} units`, icon: TrendingUp },
     { name: 'This Month\'s Harvest', value: '125 kg', icon: Calendar },
     { name: 'Listed for Sale', value: `${sellingItems.reduce((sum, item) => sum + item.quantity, 0)} units`, icon: ShoppingCart }
   ];
@@ -129,6 +119,41 @@ const Marketplace: React.FC = () => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Load user data on component mount and when user changes
+  React.useEffect(() => {
+    if (user) {
+      loadUserInventoryData();
+      loadAllShopListings();
+    }
+  }, [user]);
+
+  const loadUserInventoryData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const [inventoryData, shopData] = await Promise.all([
+        getUserInventory(user.id),
+        getUserShopListings(user.id)
+      ]);
+      
+      loadUserData(inventoryData, shopData);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAllShopListings = async () => {
+    try {
+      const listings = await getAllShopListings();
+      setAllShopListings(listings);
+    } catch (error) {
+      console.error('Error loading shop listings:', error);
+    }
+  };
 
   const handleAddToCart = (product: any) => {
     if (!user) {
@@ -174,7 +199,7 @@ const Marketplace: React.FC = () => {
     });
   };
 
-  const handleQuantitySubmit = () => {
+  const handleQuantitySubmit = async () => {
     const { product, action, quantity } = quantityModal;
     
     if (quantity <= 0 || quantity > product.stock) {
@@ -182,10 +207,87 @@ const Marketplace: React.FC = () => {
       return;
     }
 
+    setLoading(true);
+    try {
     if (action === 'sell') {
-      // Add to selling items and reduce inventory stock
-      addToSelling(product, quantity);
-      setInventoryStock(prev => ({
+        // Create shop listing and reduce inventory stock
+        const success = await createShopListing(user!.id, product.id, quantity, product.price);
+        if (!success) {
+          alert('Failed to list product for sale');
+          return;
+        }
+        
+        // Update inventory quantity in database
+        const newInventoryQuantity = product.stock - quantity;
+        await updateInventoryQuantity(user!.id, product.id, newInventoryQuantity);
+        
+        // Update local state
+        updateCartInventory(product.id, newInventoryQuantity);
+        
+        // Reload data to sync with database
+        await loadUserInventoryData();
+        await loadAllShopListings();
+        
+        alert(`${quantity} ${product.name}(s) listed for sale!`);
+      } else if (action === 'reserve') {
+        // Reserve stock (reduce from available inventory)
+        const newInventoryQuantity = product.stock - quantity;
+        const success = await updateInventoryQuantity(user!.id, product.id, newInventoryQuantity);
+        if (!success) {
+          alert('Failed to reserve stock');
+          return;
+        }
+        
+        // Update local state
+        updateCartInventory(product.id, newInventoryQuantity);
+        
+        alert(`${quantity} ${product.name}(s) reserved from inventory!`);
+      }
+    } catch (error) {
+      console.error('Error processing quantity update:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+      setQuantityModal({
+        isOpen: false,
+        product: null,
+        action: 'sell',
+        quantity: 1
+      });
+    }
+  };
+
+  const handleRemoveFromShop = async (productId: string, quantity: number) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Remove from shop listings
+      const success = await removeShopListing(user.id, productId);
+      if (!success) {
+        alert('Failed to remove from shop');
+        return;
+      }
+      
+      // Return stock to inventory
+      const currentInventoryQuantity = getInventoryQuantity(productId);
+      const newInventoryQuantity = currentInventoryQuantity + quantity;
+      await updateInventoryQuantity(user.id, productId, newInventoryQuantity);
+      
+      // Update local state
+      updateCartInventory(productId, newInventoryQuantity);
+      
+      // Reload data
+      await loadUserInventoryData();
+      await loadAllShopListings();
+    } catch (error) {
+      console.error('Error removing from shop:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
         ...prev,
         [product.id]: prev[product.id] - quantity
       }));
@@ -215,6 +317,8 @@ const Marketplace: React.FC = () => {
       quantity: 1
     });
   };
+
+  if (loading && !user) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -306,13 +410,7 @@ const Marketplace: React.FC = () => {
                       <button 
                         onClick={() => {
                           if (window.confirm(`Remove ${sellingItem.product.name} from shop?`)) {
-                            // Return stock to inventory
-                            setInventoryStock(prev => ({
-                              ...prev,
-                              [sellingItem.product.id]: prev[sellingItem.product.id] + sellingItem.quantity
-                            }));
-                            // Remove from selling items
-                            removeFromSelling(sellingItem.product.id);
+                            handleRemoveFromShop(sellingItem.product.id, sellingItem.quantity);
                           }
                         }}
                         className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
@@ -413,7 +511,7 @@ const Marketplace: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Listed for Sale:</span>
-                      <span className="font-medium text-emerald-600">{getSellingStock(product.id)} units</span>
+                      <span className="font-medium text-emerald-600">{getShopQuantity(product.id)} units</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Harvest Date:</span>
@@ -552,7 +650,7 @@ const Marketplace: React.FC = () => {
                   <button
                     onClick={handleQuantitySubmit}
                     className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-white ${
-                      quantityModal.action === 'sell' 
+                      quantityModal.action === 'sell'
                         ? 'bg-emerald-600 hover:bg-emerald-700' 
                         : 'bg-blue-600 hover:bg-blue-700'
                     }`}

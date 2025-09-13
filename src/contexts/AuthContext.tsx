@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, User, AuthState, AuthSession, generateSessionToken, getSessionExpiry, getDeviceInfo } from '../lib/supabase';
+import { supabase, User, AuthState, AuthSession, generateSessionToken, getSessionExpiry, getDeviceInfo, getUserInventory, getUserShopListings } from '../lib/supabase';
+import { useCart } from './CartContext';
 
 interface AuthContextType extends AuthState {
   signUp: (email: string, password: string, username: string, contact: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  loadUserInventoryData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +24,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionCheckComplete, setSessionCheckComplete] = useState(false);
+  const [cartContext, setCartContext] = useState<any>(null);
+
+  // Get cart context after it's available
+  useEffect(() => {
+    // This is a workaround to avoid circular dependency
+    // We'll call loadUserData from the component level instead
+  }, []);
 
   // Cleanup expired sessions
   const cleanupExpiredSessions = async () => {

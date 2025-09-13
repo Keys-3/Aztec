@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Minus, Plus, Trash2, ShoppingBag, CreditCard, MapPin, User, Phone, Mail, ArrowLeft, Star, Filter, Search, Heart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { supabase, getAllShopListings } from '../lib/supabase';
 import AuthModal from './AuthModal';
 
 const CartPage: React.FC = () => {
-  const { items, total, updateQuantity, removeFromCart, clearCart, addToCart, sellingItems } = useCart();
+  const { items, total, updateQuantity, removeFromCart, clearCart, addToCart, sellingItems, loadUserData } = useCart();
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'marketplace' | 'cart'>('marketplace');
@@ -14,6 +14,7 @@ const CartPage: React.FC = () => {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allShopListings, setAllShopListings] = useState<any[]>([]);
   const [shippingDetails, setShippingDetails] = useState({
     full_name: '',
     phone: '',
@@ -25,8 +26,25 @@ const CartPage: React.FC = () => {
     country: 'India'
   });
 
-  // Use selling items as products for the marketplace
-  const products = sellingItems.map(item => item.product);
+  // Load all shop listings on component mount
+  React.useEffect(() => {
+    loadAllShopListings();
+  }, []);
+
+  const loadAllShopListings = async () => {
+    try {
+      const listings = await getAllShopListings();
+      setAllShopListings(listings);
+    } catch (error) {
+      console.error('Error loading shop listings:', error);
+    }
+  };
+
+  // Use all shop listings as products for the marketplace
+  const products = allShopListings.map(listing => ({
+    ...listing.product,
+    stock: listing.quantity // Use listing quantity as available stock
+  }));
 
   const filteredProducts = products.filter(product => {
     const matchesFilter = filter === 'all' || product.category === filter;
@@ -264,6 +282,9 @@ const CartPage: React.FC = () => {
                      <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
                        {sellingItems.find(item => item.product.id === product.id)?.quantity || 0} available
                      </div>
+                     <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                       {product.stock} available
+                     </div>
                   </div>
                   
                   <div className="p-6">
@@ -284,11 +305,7 @@ const CartPage: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-400">Harvest Date:</span>
-                         <span className="font-medium text-emerald-400">{sellingItems.find(item => item.product.id === product.id)?.quantity || 0} units</span>
-                       </div>
-                       <div className="flex items-center justify-between text-sm">
-                         <span className="text-gray-400">Harvest Date:</span>
-                         <span className="font-medium text-white">{new Date(product.harvest_date).toLocaleDateString()}</span>
+                        <span className="font-medium text-white">{new Date(product.harvest_date).toLocaleDateString()}</span>
                       </div>
                     </div>
                     

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Product, CartItem } from '../lib/supabase';
+import { Product, CartItem, UserInventory, ShopListing } from '../lib/supabase';
 
 interface SellingItem {
   product: Product;
@@ -9,6 +9,8 @@ interface SellingItem {
 interface CartState {
   items: CartItem[];
   sellingItems: SellingItem[];
+  inventory: UserInventory[];
+  shopListings: ShopListing[];
   total: number;
   itemCount: number;
 }
@@ -19,6 +21,10 @@ interface CartContextType extends CartState {
   removeFromSelling: (productId: string) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  updateInventoryQuantity: (productId: string, quantity: number) => void;
+  loadUserData: (inventory: UserInventory[], shopListings: ShopListing[]) => void;
+  getInventoryQuantity: (productId: string) => number;
+  getShopQuantity: (productId: string) => number;
   clearCart: () => void;
 }
 
@@ -28,8 +34,11 @@ type CartAction =
   | { type: 'REMOVE_FROM_SELLING'; payload: string }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
+  | { type: 'UPDATE_INVENTORY_QUANTITY'; payload: { productId: string; quantity: number } }
+  | { type: 'LOAD_USER_DATA'; payload: { inventory: UserInventory[]; shopListings: ShopListing[] } }
   | { type: 'CLEAR_CART' }
-  | { type: 'LOAD_CART'; payload: { items: CartItem[]; sellingItems: SellingItem[] } };
+  | { type: 'LOAD_CART'; payload: { items: CartItem[]; sellingItems: SellingItem[] } }
+  | { type: 'CLEAR_USER_DATA' };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -74,6 +83,31 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return { ...state, sellingItems: newSellingItems };
     }
     
+    case 'UPDATE_INVENTORY_QUANTITY': {
+      const newInventory = state.inventory.map(item =>
+        item.product_id === action.payload.productId
+          ? { ...item, quantity: Math.max(0, action.payload.quantity) }
+          : item
+      );
+      
+      return { ...state, inventory: newInventory };
+    }
+    
+    case 'LOAD_USER_DATA': {
+      // Convert inventory and shop listings to selling items format for compatibility
+      const sellingItems: SellingItem[] = action.payload.shopListings.map(listing => ({
+        product: listing.product!,
+        quantity: listing.quantity
+      }));
+      
+      return { 
+        ...state, 
+        inventory: action.payload.inventory,
+        shopListings: action.payload.shopListings,
+        sellingItems
+      };
+    }
+    
     case 'REMOVE_FROM_SELLING': {
       const newSellingItems = state.sellingItems.filter(item => item.product.id !== action.payload);
       return { ...state, sellingItems: newSellingItems };
@@ -103,6 +137,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'CLEAR_CART':
       return { ...state, items: [], total: 0, itemCount: 0 };
     
+    case 'CLEAR_USER_DATA':
+      return { ...state, inventory: [], shopListings: [], sellingItems: [] };
+    
     case 'LOAD_CART': {
       const total = action.payload.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const itemCount = action.payload.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -124,6 +161,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
     sellingItems: [],
+    inventory: [],
+    shopListings: [],
     total: 0,
     itemCount: 0,
   });
@@ -189,6 +228,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const updateInventoryQuantity = (productId: string, quantity: number) => {
+    dispatch({ type: 'UPDATE_INVENTORY_QUANTITY', payload: { productId, quantity } });
+  };
+
+  const loadUserData = (inventory: UserInventory[], shopListings: ShopListing[]) => {
+    dispatch({ type: 'LOAD_USER_DATA', payload: { inventory, shopListings } });
+  };
+
+  const getInventoryQuantity = (productId: string): number => {
+    const inventoryItem = state.inventory.find(item => item.product_id === productId);
+    return inventoryItem ? inventoryItem.quantity : 0;
+  };
+
+  const getShopQuantity = (productId: string): number => {
+    const shopItem = state.shopListings.find(item => item.product_id === productId);
+    return shopItem ? shopItem.quantity : 0;
+  };
   const value = {
     ...state,
     addToCart,
@@ -196,6 +252,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeFromSelling,
     removeFromCart,
     updateQuantity,
+    updateInventoryQuantity,
+    loadUserData,
+    getInventoryQuantity,
+    getShopQuantity,
     clearCart,
   };
 
