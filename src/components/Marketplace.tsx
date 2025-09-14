@@ -288,27 +288,6 @@ const Marketplace: React.FC = () => {
     }
   };
 
-        ...prev,
-        [product.id]: prev[product.id] - quantity
-      }));
-      alert(`${quantity} ${product.name}(s) listed for sale!`);
-    } else if (action === 'reserve') {
-      // Reserve stock (reduce from available inventory)
-      setInventoryStock(prev => ({
-        ...prev,
-        [product.id]: prev[product.id] - quantity
-      }));
-      alert(`${quantity} ${product.name}(s) reserved from inventory!`);
-    }
-
-    setQuantityModal({
-      isOpen: false,
-      product: null,
-      action: 'sell',
-      quantity: 1
-    });
-  };
-
   const closeQuantityModal = () => {
     setQuantityModal({
       isOpen: false,
