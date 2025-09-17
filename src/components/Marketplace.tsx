@@ -1,484 +1,496 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Star, Package, Plus, Minus } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
+import { Plus, Minus, ShoppingCart, Package, Star, Filter, Search, Eye, Edit, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useCart } from '../contexts/CartContext';
+import { getUserInventory, getUserShopListings, updateInventoryQuantity, createShopListing, removeShopListing, updateShopListingQuantity, getAllShopListings } from '../lib/supabase';
+import AuthModal from './AuthModal';
 
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  image_url?: string;
-  description?: string;
-  harvest_date?: string;
-  quality?: string;
-  rating?: number;
-}
-
-interface ShopListing {
-  id: string;
-  user_id: string;
-  product_id: string;
-  quantity: number;
-  price: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  products: Product;
-  user_profiles: {
-    username: string;
-  };
-}
-
-interface UserInventory {
-  id: string;
-  user_id: string;
-  product_id: string;
-  quantity: number;
-  products: Product;
-}
-
-export default function Marketplace() {
-  const { addToCart } = useCart();
+const Marketplace: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'marketplace' | 'inventory'>('marketplace');
-  const [shopListings, setShopListings] = useState<ShopListing[]>([]);
-  const [userInventory, setUserInventory] = useState<UserInventory[]>([]);
+  const { addToCart, loadUserData, getInventoryQuantity, getShopQuantity } = useCart();
+  const [currentView, setCurrentView] = useState<'marketplace' | 'inventory'>('marketplace');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [allShopListings, setAllShopListings] = useState<any[]>([]);
+  const [userInventory, setUserInventory] = useState<any[]>([]);
+  const [userShopListings, setUserShopListings] = useState<any[]>([]);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Load data on component mount and when user changes
   useEffect(() => {
     if (user) {
-      loadData();
+      loadAllData();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
-  const loadData = async () => {
+  const loadAllData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
     try {
-      setLoading(true);
-      await Promise.all([loadShopListings(), loadUserInventory()]);
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load data');
+      const [inventory, shopListings, allListings] = await Promise.all([
+        getUserInventory(user.id),
+        getUserShopListings(user.id),
+        getAllShopListings()
+      ]);
+
+      setUserInventory(inventory);
+      setUserShopListings(shopListings);
+      setAllShopListings(allListings);
+      
+      // Update cart context with user data
+      loadUserData(inventory, shopListings);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      showMessage('error', 'Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadShopListings = async () => {
-    const { data, error } = await supabase
-      .from('shop_listings')
-      .select(`
-        *,
-        products (*),
-        user_profiles (username)
-      `)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
 
-    if (error) {
-      console.error('Error loading shop listings:', error);
-      throw error;
+  const handleAddToCart = (product: any) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
     }
-
-    setShopListings(data || []);
+    addToCart(product, 1);
+    showMessage('success', `${product.name} added to cart!`);
   };
 
-  const loadUserInventory = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('user_inventory')
-      .select(`
-        *,
-        products (*)
-      `)
-      .eq('user_id', user.id)
-      .gt('quantity', 0);
-
-    if (error) {
-      console.error('Error loading user inventory:', error);
-      throw error;
-    }
-
-    setUserInventory(data || []);
-  };
-
-  const handleAddToCart = (product: Product, price: number) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: price,
-      image: product.image_url || 'https://images.pexels.com/photos/1300972/pexels-photo-1300972.jpeg',
-      quantity: 1
-    });
-  };
-
-  const handleListForSale = async (inventoryItem: UserInventory, quantity: number, price: number) => {
+  const handleListForSale = async (product: any, quantity: number, price: number) => {
     if (!user) return;
 
     try {
-      // Check if listing already exists
-      const { data: existingListing } = await supabase
-        .from('shop_listings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', inventoryItem.product_id)
-        .eq('status', 'active')
-        .single();
-
-      if (existingListing) {
-        // Update existing listing
-        const { error } = await supabase
-          .from('shop_listings')
-          .update({
-            quantity: existingListing.quantity + quantity,
-            price: price,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingListing.id);
-
-        if (error) throw error;
+      const success = await createShopListing(user.id, product.id, quantity, price);
+      if (success) {
+        // Update inventory quantity
+        const currentInventoryQty = getInventoryQuantity(product.id);
+        await updateInventoryQuantity(user.id, product.id, currentInventoryQty - quantity);
+        
+        // Reload data
+        await loadAllData();
+        showMessage('success', `${quantity} ${product.name}(s) listed for sale!`);
       } else {
-        // Create new listing
-        const { error } = await supabase
-          .from('shop_listings')
-          .insert({
-            user_id: user.id,
-            product_id: inventoryItem.product_id,
-            quantity: quantity,
-            price: price,
-            status: 'active'
-          });
-
-        if (error) throw error;
+        showMessage('error', 'Failed to list item for sale');
       }
-
-      // Update user inventory
-      const newQuantity = inventoryItem.quantity - quantity;
-      if (newQuantity > 0) {
-        const { error } = await supabase
-          .from('user_inventory')
-          .update({ quantity: newQuantity })
-          .eq('id', inventoryItem.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('user_inventory')
-          .delete()
-          .eq('id', inventoryItem.id);
-
-        if (error) throw error;
-      }
-
-      // Reload data
-      await loadData();
-    } catch (err) {
-      console.error('Error listing item for sale:', err);
-      setError('Failed to list item for sale');
+    } catch (error) {
+      console.error('Error listing item:', error);
+      showMessage('error', 'Failed to list item for sale');
     }
   };
 
+  const handleRemoveFromSale = async (productId: string) => {
+    if (!user) return;
+
+    try {
+      const listing = userShopListings.find(l => l.product_id === productId);
+      if (!listing) return;
+
+      const success = await removeShopListing(user.id, productId);
+      if (success) {
+        // Return quantity to inventory
+        const currentInventoryQty = getInventoryQuantity(productId);
+        await updateInventoryQuantity(user.id, productId, currentInventoryQty + listing.quantity);
+        
+        // Reload data
+        await loadAllData();
+        showMessage('success', 'Item removed from sale');
+      } else {
+        showMessage('error', 'Failed to remove item from sale');
+      }
+    } catch (error) {
+      console.error('Error removing item from sale:', error);
+      showMessage('error', 'Failed to remove item from sale');
+    }
+  };
+
+  // Filter products for marketplace
+  const filteredProducts = allShopListings.filter(listing => {
+    if (!listing.product) return false;
+    const matchesFilter = filter === 'all' || listing.product.category === filter;
+    const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading marketplace...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={loadData}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Try Again
-          </button>
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-white mb-2">Loading Marketplace</h2>
+              <p className="text-gray-400">Please wait while we load your data...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Marketplace</h1>
-          <div className="flex space-x-4">
+          <h1 className="text-4xl font-bold text-white mb-2">Marketplace & Inventory</h1>
+          <p className="text-gray-400">Manage your inventory and browse fresh produce from other farmers</p>
+          
+          {/* Message Display */}
+          {message && (
+            <div className={`mt-4 p-3 rounded-lg flex items-center space-x-2 ${
+              message.type === 'success' 
+                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30' 
+                : 'bg-red-600/20 text-red-400 border border-red-600/30'
+            }`}>
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <AlertCircle className="h-5 w-5" />
+              )}
+              <span className="text-sm">{message.text}</span>
+            </div>
+          )}
+          
+          {/* View Toggle */}
+          <div className="mt-6 flex space-x-1 bg-gray-800 rounded-lg p-1 w-fit">
             <button
-              onClick={() => setActiveTab('marketplace')}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === 'marketplace'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              onClick={() => setCurrentView('marketplace')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                currentView === 'marketplace'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
-              <ShoppingCart className="w-5 h-5 inline-block mr-2" />
-              Shop
+              <ShoppingCart className="h-4 w-4 inline mr-2" />
+              Marketplace
             </button>
             <button
-              onClick={() => setActiveTab('inventory')}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === 'inventory'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              onClick={() => setCurrentView('inventory')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                currentView === 'inventory'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
-              <Package className="w-5 h-5 inline-block mr-2" />
+              <Package className="h-4 w-4 inline mr-2" />
               My Inventory
             </button>
           </div>
         </div>
 
-        {activeTab === 'marketplace' ? (
-          <MarketplaceTab 
-            shopListings={shopListings} 
-            onAddToCart={handleAddToCart}
-            currentUserId={user?.id}
-          />
-        ) : (
-          <InventoryTab 
-            userInventory={userInventory} 
+        {/* Marketplace View */}
+        {currentView === 'marketplace' && (
+          <>
+            {/* Filters */}
+            <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-gray-700">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <select
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      className="pl-10 pr-8 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="leafy-greens">Leafy Greens</option>
+                      <option value="herbs">Herbs</option>
+                      <option value="fruits">Fruits & Vegetables</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-400">
+                  Showing {filteredProducts.length} products
+                </div>
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+                <ShoppingCart className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+                <h2 className="text-2xl font-bold text-white mb-4">No Products Available</h2>
+                <p className="text-gray-400 mb-8">Check back later for fresh produce from other farmers!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProducts.map((listing) => (
+                  <div key={listing.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden hover:shadow-emerald-500/20 transition-all duration-300 transform hover:-translate-y-2 border border-gray-700">
+                    <div className="relative">
+                      <img 
+                        src={listing.product.image_url} 
+                        alt={listing.product.name}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {listing.product.quality}
+                      </div>
+                      <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                        {listing.quantity} available
+                      </div>
+                    </div>
+                    
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-semibold text-white">{listing.product.name}</h3>
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span className="text-sm text-gray-400">{listing.product.rating}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-400 text-sm mb-4 leading-relaxed">{listing.product.description}</p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Price:</span>
+                          <span className="font-semibold text-emerald-400 text-lg">₹{listing.price}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Seller:</span>
+                          <span className="font-medium text-white">{listing.user_profiles?.username || 'Unknown'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Harvest Date:</span>
+                          <span className="font-medium text-white">{new Date(listing.product.harvest_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      
+                      {listing.user_id !== user?.id ? (
+                        <button 
+                          onClick={() => handleAddToCart(listing.product)}
+                          className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                      ) : (
+                        <div className="w-full bg-blue-600/20 text-blue-400 py-3 px-4 rounded-lg text-center font-medium border border-blue-600/30">
+                          Your Listing
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Inventory View */}
+        {currentView === 'inventory' && (
+          <InventoryView 
+            userInventory={userInventory}
+            userShopListings={userShopListings}
             onListForSale={handleListForSale}
+            onRemoveFromSale={handleRemoveFromSale}
+            user={user}
           />
         )}
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
       </div>
     </div>
   );
-}
+};
 
-function MarketplaceTab({ 
-  shopListings, 
-  onAddToCart, 
-  currentUserId 
-}: { 
-  shopListings: ShopListing[]; 
-  onAddToCart: (product: Product, price: number) => void;
-  currentUserId?: string;
-}) {
-  if (shopListings.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-600 mb-2">No items for sale</h3>
-        <p className="text-gray-500">Check back later for fresh produce!</p>
-      </div>
-    );
-  }
+// Inventory View Component
+const InventoryView: React.FC<{
+  userInventory: any[];
+  userShopListings: any[];
+  onListForSale: (product: any, quantity: number, price: number) => void;
+  onRemoveFromSale: (productId: string) => void;
+  user: any;
+}> = ({ userInventory, userShopListings, onListForSale, onRemoveFromSale, user }) => {
+  const [listingForms, setListingForms] = useState<{[key: string]: {quantity: number, price: number}}>({});
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {shopListings.map((listing) => (
-        <div key={listing.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-          <div className="aspect-w-16 aspect-h-12">
-            <img
-              src={listing.products.image_url || 'https://images.pexels.com/photos/1300972/pexels-photo-1300972.jpeg'}
-              alt={listing.products.name}
-              className="w-full h-48 object-cover"
-            />
-          </div>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-800">{listing.products.name}</h3>
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {listing.products.category}
-              </span>
-            </div>
-            
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-              {listing.products.description || 'Fresh, high-quality produce'}
-            </p>
-            
-            <div className="flex items-center mb-3">
-              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-              <span className="text-sm text-gray-600 ml-1">
-                {listing.products.rating || 4.5} • {listing.products.quality || 'Premium'}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="text-2xl font-bold text-green-600">${listing.price}</span>
-                <span className="text-sm text-gray-500 ml-1">per unit</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {listing.quantity} available
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-500">
-                Sold by: {listing.user_profiles.username}
-              </span>
-              {listing.products.harvest_date && (
-                <span className="text-xs text-gray-400">
-                  Harvested: {new Date(listing.products.harvest_date).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-            
-            {listing.user_id !== currentUserId && (
-              <button
-                onClick={() => onAddToCart(listing.products, listing.price)}
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Add to Cart
-              </button>
-            )}
-            
-            {listing.user_id === currentUserId && (
-              <div className="bg-blue-50 text-blue-700 py-2 px-4 rounded-lg text-center text-sm">
-                Your listing
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function InventoryTab({ 
-  userInventory, 
-  onListForSale 
-}: { 
-  userInventory: UserInventory[]; 
-  onListForSale: (item: UserInventory, quantity: number, price: number) => void;
-}) {
-  const [listingData, setListingData] = useState<{[key: string]: {quantity: number, price: number}}>({});
-
-  const handleQuantityChange = (itemId: string, change: number) => {
-    setListingData(prev => ({
+  const updateListingForm = (productId: string, field: 'quantity' | 'price', value: number) => {
+    setListingForms(prev => ({
       ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        quantity: Math.max(1, (prev[itemId]?.quantity || 1) + change)
+      [productId]: {
+        ...prev[productId],
+        [field]: value
       }
     }));
   };
 
-  const handlePriceChange = (itemId: string, price: number) => {
-    setListingData(prev => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        price: Math.max(0, price)
-      }
-    }));
+  const getListingForm = (productId: string) => {
+    return listingForms[productId] || { quantity: 1, price: 0 };
   };
 
-  const handleListItem = (item: UserInventory) => {
-    const data = listingData[item.id];
-    if (data && data.quantity > 0 && data.price > 0) {
-      onListForSale(item, data.quantity, data.price);
-      setListingData(prev => ({
+  const handleSubmitListing = (product: any) => {
+    const form = getListingForm(product.id);
+    if (form.quantity > 0 && form.price > 0) {
+      onListForSale(product, form.quantity, form.price);
+      // Reset form
+      setListingForms(prev => ({
         ...prev,
-        [item.id]: { quantity: 1, price: 0 }
+        [product.id]: { quantity: 1, price: 0 }
       }));
     }
   };
 
-  if (userInventory.length === 0) {
+  if (!user) {
     return (
-      <div className="text-center py-12">
-        <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-600 mb-2">Your inventory is empty</h3>
-        <p className="text-gray-500">Purchase items to add them to your inventory!</p>
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+        <Package className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-white mb-4">Sign In Required</h2>
+        <p className="text-gray-400">Please sign in to view your inventory</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {userInventory.map((item) => {
-        const currentListing = listingData[item.id] || { quantity: 1, price: 0 };
-        const maxQuantity = item.quantity;
-        
-        return (
-          <div key={item.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="aspect-w-16 aspect-h-12">
-              <img
-                src={item.products.image_url || 'https://images.pexels.com/photos/1300972/pexels-photo-1300972.jpeg'}
-                alt={item.products.name}
-                className="w-full h-48 object-cover"
-              />
-            </div>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-800">{item.products.name}</h3>
-                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  {item.products.category}
-                </span>
-              </div>
+    <div className="space-y-8">
+      {/* Current Inventory */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6">My Inventory</h2>
+        {userInventory.length === 0 ? (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+            <Package className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-white mb-4">No Items in Inventory</h3>
+            <p className="text-gray-400">Purchase items to add them to your inventory</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userInventory.map((item) => {
+              const form = getListingForm(item.product.id);
+              const maxQuantity = item.quantity;
               
-              <p className="text-gray-600 text-sm mb-3">
-                You have {item.quantity} units in inventory
-              </p>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity to list
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleQuantityChange(item.id, -1)}
-                      disabled={currentListing.quantity <= 1}
-                      className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="px-3 py-1 bg-gray-50 rounded-md min-w-[3rem] text-center">
-                      {currentListing.quantity}
-                    </span>
-                    <button
-                      onClick={() => handleQuantityChange(item.id, 1)}
-                      disabled={currentListing.quantity >= maxQuantity}
-                      className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+              return (
+                <div key={item.id} className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-700">
+                  <img
+                    src={item.product.image_url}
+                    alt={item.product.name}
+                    className="w-full h-32 object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-white mb-2">{item.product.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4">Available: {item.quantity} units</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Quantity to list</label>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => updateListingForm(item.product.id, 'quantity', Math.max(1, form.quantity - 1))}
+                            className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center transition-colors"
+                          >
+                            <Minus className="h-4 w-4 text-white" />
+                          </button>
+                          <span className="text-white font-medium w-12 text-center">{form.quantity}</span>
+                          <button
+                            onClick={() => updateListingForm(item.product.id, 'quantity', Math.min(maxQuantity, form.quantity + 1))}
+                            className="w-8 h-8 bg-emerald-600 hover:bg-emerald-700 rounded-full flex items-center justify-center transition-colors"
+                          >
+                            <Plus className="h-4 w-4 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Price per unit (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.price}
+                          onChange={(e) => updateListingForm(item.product.id, 'price', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={() => handleSubmitListing(item.product)}
+                        disabled={form.quantity <= 0 || form.price <= 0 || form.quantity > maxQuantity}
+                        className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                      >
+                        List for Sale
+                      </button>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price per unit ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={currentListing.price}
-                    onChange={(e) => handlePriceChange(item.id, parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <button
-                  onClick={() => handleListItem(item)}
-                  disabled={currentListing.quantity <= 0 || currentListing.price <= 0}
-                  className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  List for Sale
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        );
-      })}
+        )}
+      </div>
+
+      {/* Current Shop Listings */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6">My Shop Listings</h2>
+        {userShopListings.length === 0 ? (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 text-center border border-gray-700">
+            <ShoppingCart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">No Items Listed</h3>
+            <p className="text-gray-400">List items from your inventory to start selling</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userShopListings.map((listing) => (
+              <div key={listing.id} className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-700">
+                <img
+                  src={listing.product.image_url}
+                  alt={listing.product.name}
+                  className="w-full h-32 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">{listing.product.name}</h3>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Quantity:</span>
+                      <span className="text-white">{listing.quantity} units</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Price:</span>
+                      <span className="text-emerald-400 font-semibold">₹{listing.price}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Total Value:</span>
+                      <span className="text-white font-semibold">₹{(listing.quantity * listing.price).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => onRemoveFromSale(listing.product_id)}
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Remove from Sale</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default Marketplace;
