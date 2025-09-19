@@ -27,37 +27,37 @@ const ContactPage: React.FC = () => {
     {
       name: 'Avnishka Bhardwaj',
       role: 'Team Manager',
-      image: {profile},
+      image: profile,
       bio: '3rd Year B.Tech (C.S.E) student.'
     },
     {
       name: 'Samarth Sharma',
       role: 'Head of Engineering',
-      image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg',
+      image: profile,
       bio: '3rd Year B.Tech (C.S.E) student..'
     },
     {
       name: 'Piyush Negi',
       role: 'Head of R&D Team',
-      image: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg',
+      image: profile,
       bio: '2nd Year B.Tech (I.T) student..'
     },
     {
       name: 'Parth Garg',
       role: 'Hardware Developer',
-      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      image: profile,
       bio: '3rd Year B.Tech (C.S.E) student.'
     },
     {
       name: 'Shreya Sharma',
       role: 'Software Developer',
-      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      image: profile,
       bio: '3rd Year B.Tech (A.I.M.L) student.'
     },
     {
       name: 'Prithvi Singh',
       role: 'Software Developer',
-      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      image: profile,
       bio: '3rd Year B.Tech (C.S.E) student.'
     }
   ];
