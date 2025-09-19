@@ -1,134 +1,61 @@
-import React, { useState } from 'react';
-import { Package, TrendingUp, Calendar, MapPin, Filter, Search, Star, ShoppingCart, DollarSign, Shield, X } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
+import React, { useState, useEffect } from 'react';
+import { Plus, Minus, ShoppingCart, Package, Star, Filter, Search, Eye, Edit, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
+import { getUserInventory, getUserShopListings, updateInventoryQuantity, createShopListing, removeShopListing, updateShopListingQuantity, getAllShopListings } from '../lib/supabase';
 import AuthModal from './AuthModal';
 
 const Marketplace: React.FC = () => {
+  const { user } = useAuth();
+  const { addToCart, loadUserData, getInventoryQuantity, getShopQuantity } = useCart();
+  const [currentView, setCurrentView] = useState<'marketplace' | 'inventory'>('marketplace');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [allShopListings, setAllShopListings] = useState<any[]>([]);
+  const [userInventory, setUserInventory] = useState<any[]>([]);
+  const [userShopListings, setUserShopListings] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [inventoryStock, setInventoryStock] = useState<{[key: string]: number}>({
-    '550e8400-e29b-41d4-a716-446655440001': 25,
-    '550e8400-e29b-41d4-a716-446655440002': 18,
-    '550e8400-e29b-41d4-a716-446655440003': 32,
-    '550e8400-e29b-41d4-a716-446655440004': 22,
-    '550e8400-e29b-41d4-a716-446655440005': 15,
-    '550e8400-e29b-41d4-a716-446655440006': 28
-  });
-  const [quantityModal, setQuantityModal] = useState<{
-    isOpen: boolean;
-    product: any;
-    action: 'sell' | 'reserve';
-    quantity: number;
-  }>({
-    isOpen: false,
-    product: null,
-    action: 'sell',
-    quantity: 1
-  });
-  const { addToCart, addToSelling, removeFromSelling, sellingItems } = useCart();
-  const { user } = useAuth();
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const products = [
-    {
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      name: 'Organic Lettuce',
-      category: 'leafy-greens',
-      price: 399,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440001'],
-      image: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
-      harvest_date: '2025-01-10',
-      quality: 'Premium',
-      rating: 4.9,
-      description: 'Fresh, crisp lettuce grown in our state-of-the-art hydroponic system.',
-      image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440002',
-      name: 'Cherry Tomatoes',
-      category: 'fruits',
-      price: 559,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440002'],
-      image: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
-      harvest_date: '2025-01-08',
-      quality: 'Premium',
-      rating: 4.8,
-      description: 'Sweet, vine-ripened cherry tomatoes packed with flavor and nutrients.',
-      image_url: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440003',
-      name: 'Fresh Basil',
-      category: 'herbs',
-      price: 279,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440003'],
-      image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-      harvest_date: '2025-01-12',
-      quality: 'Premium',
-      rating: 4.9,
-      description: 'Aromatic basil leaves perfect for cooking and garnishing.',
-      image_url: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440004',
-      name: 'Baby Spinach',
-      category: 'leafy-greens',
-      price: 439,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440004'],
-      image: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
-      harvest_date: '2025-01-09',
-      quality: 'Premium',
-      rating: 4.7,
-      description: 'Tender baby spinach leaves rich in iron and vitamins.',
-      image_url: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440005',
-      name: 'Mixed Herbs Bundle',
-      category: 'herbs',
-      price: 719,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440005'],
-      image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg',
-      harvest_date: '2025-01-11',
-      quality: 'Premium',
-      rating: 4.8,
-      description: 'Variety pack including basil, cilantro, parsley, and mint.',
-      image_url: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440006',
-      name: 'Cucumber',
-      category: 'fruits',
-      price: 239,
-      stock: inventoryStock['550e8400-e29b-41d4-a716-446655440006'],
-      image: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg',
-      harvest_date: '2025-01-13',
-      quality: 'Premium',
-      rating: 4.6,
-      description: 'Crisp, refreshing cucumbers perfect for salads and snacking.',
-      image_url: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg'
+  // Load data on component mount and when user changes
+  useEffect(() => {
+    if (user) {
+      loadAllData();
+    } else {
+      setLoading(false);
     }
-  ];
+  }, [user]);
 
-  // Get selling stock for each product
-  const getSellingStock = (productId: string) => {
-    const sellingItem = sellingItems.find(item => item.product.id === productId);
-    return sellingItem ? sellingItem.quantity : 0;
+  const loadAllData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const [inventory, shopListings, allListings] = await Promise.all([
+        getUserInventory(user.id),
+        getUserShopListings(user.id),
+        getAllShopListings()
+      ]);
+
+      setUserInventory(inventory);
+      setUserShopListings(shopListings);
+      setAllShopListings(allListings);
+      
+      // Update cart context with user data
+      loadUserData(inventory, shopListings);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      showMessage('error', 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const storageStats = [
-    { name: 'Total Storage Capacity', value: '500 kg', icon: Package },
-    { name: 'Current Stock', value: `${Object.values(inventoryStock).reduce((a, b) => a + b, 0)} units`, icon: TrendingUp },
-    { name: 'This Month\'s Harvest', value: '125 kg', icon: Calendar },
-    { name: 'Listed for Sale', value: `${sellingItems.reduce((sum, item) => sum + item.quantity, 0)} units`, icon: ShoppingCart }
-  ];
-
-  const filteredProducts = products.filter(product => {
-    const matchesFilter = filter === 'all' || product.category === filter;
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
 
   const handleAddToCart = (product: any) => {
     if (!user) {
@@ -136,433 +63,249 @@ const Marketplace: React.FC = () => {
       return;
     }
     addToCart(product, 1);
-    // Show success message or toast
-    alert(`${product.name} added to cart!`);
+    showMessage('success', `${product.name} added to cart!`);
   };
 
-  const handleSellClick = (product: any) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
+  const handleListForSale = async (product: any, quantity: number, price: number) => {
+    if (!user) return;
+
+    try {
+      const success = await createShopListing(user.id, product.id, quantity, price);
+      if (success) {
+        // Update inventory quantity
+        const currentInventoryQty = getInventoryQuantity(product.id);
+        await updateInventoryQuantity(user.id, product.id, currentInventoryQty - quantity);
+        
+        // Reload data
+        await loadAllData();
+        showMessage('success', `${quantity} ${product.name}(s) listed for sale!`);
+      } else {
+        showMessage('error', 'Failed to list item for sale');
+      }
+    } catch (error) {
+      console.error('Error listing item:', error);
+      showMessage('error', 'Failed to list item for sale');
     }
-    if (product.stock <= 0) {
-      alert('No stock available to sell!');
-      return;
-    }
-    setQuantityModal({
-      isOpen: true,
-      product,
-      action: 'sell',
-      quantity: 1
-    });
   };
 
-  const handleReserveClick = (product: any) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
+  const handleRemoveFromSale = async (productId: string) => {
+    if (!user) return;
+
+    try {
+      const listing = userShopListings.find(l => l.product_id === productId);
+      if (!listing) return;
+
+      const success = await removeShopListing(user.id, productId);
+      if (success) {
+        // Return quantity to inventory
+        const currentInventoryQty = getInventoryQuantity(productId);
+        await updateInventoryQuantity(user.id, productId, currentInventoryQty + listing.quantity);
+        
+        // Reload data
+        await loadAllData();
+        showMessage('success', 'Item removed from sale');
+      } else {
+        showMessage('error', 'Failed to remove item from sale');
+      }
+    } catch (error) {
+      console.error('Error removing item from sale:', error);
+      showMessage('error', 'Failed to remove item from sale');
     }
-    if (product.stock <= 0) {
-      alert('No stock available to reserve!');
-      return;
-    }
-    setQuantityModal({
-      isOpen: true,
-      product,
-      action: 'reserve',
-      quantity: 1
-    });
   };
 
-  const handleQuantitySubmit = () => {
-    const { product, action, quantity } = quantityModal;
-    
-    if (quantity <= 0 || quantity > product.stock) {
-      alert(`Please enter a valid quantity (1-${product.stock})`);
-      return;
-    }
+  // Filter products for marketplace
+  const filteredProducts = allShopListings.filter(listing => {
+    if (!listing.product) return false;
+    const matchesFilter = filter === 'all' || listing.product.category === filter;
+    const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
-    if (action === 'sell') {
-      // Add to selling items and reduce inventory stock
-      addToSelling(product, quantity);
-      setInventoryStock(prev => ({
-        ...prev,
-        [product.id]: prev[product.id] - quantity
-      }));
-      alert(`${quantity} ${product.name}(s) listed for sale!`);
-    } else if (action === 'reserve') {
-      // Reserve stock (reduce from available inventory)
-      setInventoryStock(prev => ({
-        ...prev,
-        [product.id]: prev[product.id] - quantity
-      }));
-      alert(`${quantity} ${product.name}(s) reserved from inventory!`);
-    }
-
-    setQuantityModal({
-      isOpen: false,
-      product: null,
-      action: 'sell',
-      quantity: 1
-    });
-  };
-
-  const closeQuantityModal = () => {
-    setQuantityModal({
-      isOpen: false,
-      product: null,
-      action: 'sell',
-      quantity: 1
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-white mb-2">Loading Marketplace</h2>
+              <p className="text-gray-400">Please wait while we load your data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Storage & Inventory</h1>
-          <p className="text-lg text-gray-600">Manage your harvest storage and sell your premium produce</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Marketplace & Inventory</h1>
+          <p className="text-gray-400">Manage your inventory and browse fresh produce from other farmers</p>
+          
+          {/* Message Display */}
+          {message && (
+            <div className={`mt-4 p-3 rounded-lg flex items-center space-x-2 ${
+              message.type === 'success' 
+                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30' 
+                : 'bg-red-600/20 text-red-400 border border-red-600/30'
+            }`}>
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <AlertCircle className="h-5 w-5" />
+              )}
+              <span className="text-sm">{message.text}</span>
+            </div>
+          )}
+          
+          {/* View Toggle */}
+          <div className="mt-6 flex space-x-1 bg-gray-800 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setCurrentView('marketplace')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                currentView === 'marketplace'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4 inline mr-2" />
+              Marketplace
+            </button>
+            <button
+              onClick={() => setCurrentView('inventory')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                currentView === 'inventory'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Package className="h-4 w-4 inline mr-2" />
+              My Inventory
+            </button>
+          </div>
         </div>
 
-        {/* Storage Stats */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Storage Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {storageStats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
-                      <Icon className="h-6 w-6 text-emerald-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                      <div className="text-sm text-gray-600">{stat.name}</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Shop Products Section */}
-        {sellingItems.length > 0 && (
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop - Listed for Sale</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sellingItems.map((sellingItem) => (
-                <div key={`shop-${sellingItem.product.id}`} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-emerald-200">
+        {/* Marketplace View */}
+        {currentView === 'marketplace' && (
+          <>
+            {/* Filters */}
+            <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-gray-700">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="relative">
-                    <img 
-                      src={sellingItem.product.image} 
-                      alt={sellingItem.product.name}
-                      className="w-full h-48 object-cover"
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
-                    <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      For Sale
-                    </div>
-                    <div className="absolute bottom-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                      {sellingItem.quantity} Available
-                    </div>
                   </div>
-                  
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{sellingItem.product.name}</h3>
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-600">{sellingItem.product.rating}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">{sellingItem.product.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Price:</span>
-                        <span className="font-semibold text-emerald-600">₹{sellingItem.product.price}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Available for Sale:</span>
-                        <span className="font-medium text-emerald-600">{sellingItem.quantity} units</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Harvest Date:</span>
-                        <span className="font-medium">{new Date(sellingItem.product.harvest_date).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-3">
-                      <button 
-                        onClick={() => handleAddToCart(sellingItem.product)}
-                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-1"
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                        <span>Buy Now</span>
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (window.confirm(`Remove ${sellingItem.product.name} from shop?`)) {
-                            // Return stock to inventory
-                            setInventoryStock(prev => ({
-                              ...prev,
-                              [sellingItem.product.id]: prev[sellingItem.product.id] + sellingItem.quantity
-                            }));
-                            // Remove from selling items
-                            removeFromSelling(sellingItem.product.id);
-                          }
-                        }}
-                        className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <select
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      className="pl-10 pr-8 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="leafy-greens">Leafy Greens</option>
+                      <option value="herbs">Herbs</option>
+                      <option value="fruits">Fruits & Vegetables</option>
+                    </select>
                   </div>
                 </div>
-              ))}
+                <div className="text-sm text-gray-400">
+                  Showing {filteredProducts.length} products
+                </div>
+              </div>
             </div>
-          </section>
+
+            {/* Product Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+                <ShoppingCart className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+                <h2 className="text-2xl font-bold text-white mb-4">No Products Available</h2>
+                <p className="text-gray-400 mb-8">Check back later for fresh produce from other farmers!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProducts.map((listing) => (
+                  <div key={listing.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden hover:shadow-emerald-500/20 transition-all duration-300 transform hover:-translate-y-2 border border-gray-700">
+                    <div className="relative">
+                      <img 
+                        src={listing.product.image_url} 
+                        alt={listing.product.name}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {listing.product.quality}
+                      </div>
+                      <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                        {listing.quantity} available
+                      </div>
+                    </div>
+                    
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-semibold text-white">{listing.product.name}</h3>
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span className="text-sm text-gray-400">{listing.product.rating}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-400 text-sm mb-4 leading-relaxed">{listing.product.description}</p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Price:</span>
+                          <span className="font-semibold text-emerald-400 text-lg">₹{listing.price}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Seller:</span>
+                          <span className="font-medium text-white">{listing.user_profiles?.username || 'Unknown'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">Harvest Date:</span>
+                          <span className="font-medium text-white">{new Date(listing.product.harvest_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      
+                      {listing.user_id !== user?.id ? (
+                        <button 
+                          onClick={() => handleAddToCart(listing.product)}
+                          className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                      ) : (
+                        <div className="w-full bg-blue-600/20 text-blue-400 py-3 px-4 rounded-lg text-center font-medium border border-blue-600/30">
+                          Your Listing
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Filters and Search */}
-        <section className="mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="leafy-greens">Leafy Greens</option>
-                    <option value="herbs">Herbs</option>
-                    <option value="fruits">Fruits & Vegetables</option>
-                  </select>
-                </div>
-              </div>
-              <div className="text-sm text-gray-600">
-                Showing {filteredProducts.length} of {products.length} products
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Product Grid */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Inventory - Available Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                <div className="relative">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {product.quality}
-                  </div>
-                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                    <MapPin className="h-4 w-4 inline mr-1" />
-                    Local Farm
-                  </div>
-                  {product.stock <= 0 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">Out of Stock</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">{product.name}</h3>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm text-gray-600">{product.rating}</span>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">{product.description}</p>
-                  
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Price:</span>
-                       <span className="font-semibold text-emerald-600">₹{product.price}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Stock:</span>
-                       <span className={`font-medium ${product.stock <= 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                         {product.stock} units
-                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Listed for Sale:</span>
-                      <span className="font-medium text-emerald-600">{getSellingStock(product.id)} units</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Harvest Date:</span>
-                       <span className="font-medium">{new Date(product.harvest_date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <button 
-                      onClick={() => handleSellClick(product)}
-                      disabled={product.stock <= 0}
-                      className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center space-x-1"
-                    >
-                      <DollarSign className="h-4 w-4" />
-                      <span>List to Sell</span>
-                    </button>
-                    <button 
-                      onClick={() => handleReserveClick(product)}
-                      disabled={product.stock <= 0}
-                      className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center space-x-1"
-                    >
-                      <Shield className="h-4 w-4" />
-                      <span>Reserve Stock</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Recent Sales */}
-        <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Sales Activity</h2>
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {[
-                    { product: 'Organic Lettuce', quantity: '2.5 kg', price: '₹997', buyer: 'Green Valley Restaurant', date: '2025-01-10', status: 'Delivered' },
-                    { product: 'Cherry Tomatoes', quantity: '1.5 kg', price: '₹839', buyer: 'Local Market Co.', date: '2025-01-09', status: 'In Transit' },
-                    { product: 'Mixed Herbs', quantity: '8 bundles', price: '₹5,752', buyer: 'Farm Fresh Grocers', date: '2025-01-08', status: 'Delivered' },
-                    { product: 'Baby Spinach', quantity: '2 kg', price: '₹878', buyer: 'Healthy Eats Cafe', date: '2025-01-07', status: 'Delivered' }
-                  ].map((sale, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sale.product}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sale.quantity}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{sale.price}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sale.buyer}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sale.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          sale.status === 'Delivered' 
-                            ? 'bg-emerald-100 text-emerald-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {sale.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-        
-        {/* Quantity Modal */}
-        {quantityModal.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {quantityModal.action === 'sell' ? 'List for Sale' : 'Reserve Stock'}
-                </h3>
-                <button
-                  onClick={closeQuantityModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="p-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <img
-                    src={quantityModal.product?.image}
-                    alt={quantityModal.product?.name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      {quantityModal.product?.name}
-                    </h4>
-                    <p className="text-gray-600">Available: {quantityModal.product?.stock} units</p>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity {quantityModal.action === 'sell' ? 'to List' : 'to Reserve'}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={quantityModal.product?.stock}
-                    value={quantityModal.quantity}
-                    onChange={(e) => setQuantityModal({
-                      ...quantityModal,
-                      quantity: parseInt(e.target.value) || 1
-                    })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Maximum: {quantityModal.product?.stock} units
-                  </p>
-                </div>
-                
-                <div className="flex space-x-3">
-                  <button
-                    onClick={closeQuantityModal}
-                    className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleQuantitySubmit}
-                    className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-white ${
-                      quantityModal.action === 'sell' 
-                        ? 'bg-emerald-600 hover:bg-emerald-700' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    {quantityModal.action === 'sell' ? 'List for Sale' : 'Reserve Stock'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Inventory View */}
+        {currentView === 'inventory' && (
+          <InventoryView 
+            userInventory={userInventory}
+            userShopListings={userShopListings}
+            onListForSale={handleListForSale}
+            onRemoveFromSale={handleRemoveFromSale}
+            user={user}
+          />
         )}
         
         {/* Auth Modal */}
@@ -570,6 +313,181 @@ const Marketplace: React.FC = () => {
           isOpen={isAuthModalOpen} 
           onClose={() => setIsAuthModalOpen(false)} 
         />
+      </div>
+    </div>
+  );
+};
+
+// Inventory View Component
+const InventoryView: React.FC<{
+  userInventory: any[];
+  userShopListings: any[];
+  onListForSale: (product: any, quantity: number, price: number) => void;
+  onRemoveFromSale: (productId: string) => void;
+  user: any;
+}> = ({ userInventory, userShopListings, onListForSale, onRemoveFromSale, user }) => {
+  const [listingForms, setListingForms] = useState<{[key: string]: {quantity: number, price: number}}>({});
+
+  const updateListingForm = (productId: string, field: 'quantity' | 'price', value: number) => {
+    setListingForms(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [field]: value
+      }
+    }));
+  };
+
+  const getListingForm = (productId: string) => {
+    return listingForms[productId] || { quantity: 1, price: 0 };
+  };
+
+  const handleSubmitListing = (product: any) => {
+    const form = getListingForm(product.id);
+    if (form.quantity > 0 && form.price > 0) {
+      onListForSale(product, form.quantity, form.price);
+      // Reset form
+      setListingForms(prev => ({
+        ...prev,
+        [product.id]: { quantity: 1, price: 0 }
+      }));
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+        <Package className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-white mb-4">Sign In Required</h2>
+        <p className="text-gray-400">Please sign in to view your inventory</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Current Inventory */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6">My Inventory</h2>
+        {userInventory.length === 0 ? (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-700">
+            <Package className="h-20 w-20 text-gray-600 mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-white mb-4">No Items in Inventory</h3>
+            <p className="text-gray-400">Purchase items to add them to your inventory</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userInventory.map((item) => {
+              const form = getListingForm(item.product.id);
+              const maxQuantity = item.quantity;
+              
+              return (
+                <div key={item.id} className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-700">
+                  <img
+                    src={item.product.image_url}
+                    alt={item.product.name}
+                    className="w-full h-32 object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-white mb-2">{item.product.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4">Available: {item.quantity} units</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Quantity to list</label>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => updateListingForm(item.product.id, 'quantity', Math.max(1, form.quantity - 1))}
+                            className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center transition-colors"
+                          >
+                            <Minus className="h-4 w-4 text-white" />
+                          </button>
+                          <span className="text-white font-medium w-12 text-center">{form.quantity}</span>
+                          <button
+                            onClick={() => updateListingForm(item.product.id, 'quantity', Math.min(maxQuantity, form.quantity + 1))}
+                            className="w-8 h-8 bg-emerald-600 hover:bg-emerald-700 rounded-full flex items-center justify-center transition-colors"
+                          >
+                            <Plus className="h-4 w-4 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Price per unit (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.price}
+                          onChange={(e) => updateListingForm(item.product.id, 'price', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={() => handleSubmitListing(item.product)}
+                        disabled={form.quantity <= 0 || form.price <= 0 || form.quantity > maxQuantity}
+                        className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                      >
+                        List for Sale
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Current Shop Listings */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6">My Shop Listings</h2>
+        {userShopListings.length === 0 ? (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 text-center border border-gray-700">
+            <ShoppingCart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">No Items Listed</h3>
+            <p className="text-gray-400">List items from your inventory to start selling</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userShopListings.map((listing) => (
+              <div key={listing.id} className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-700">
+                <img
+                  src={listing.product.image_url}
+                  alt={listing.product.name}
+                  className="w-full h-32 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">{listing.product.name}</h3>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Quantity:</span>
+                      <span className="text-white">{listing.quantity} units</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Price:</span>
+                      <span className="text-emerald-400 font-semibold">₹{listing.price}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Total Value:</span>
+                      <span className="text-white font-semibold">₹{(listing.quantity * listing.price).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => onRemoveFromSale(listing.product_id)}
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Remove from Sale</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -108,3 +108,156 @@ export type AuthState = {
   user: User | null;
   loading: boolean;
 };
+export type UserInventory = {
+  id: string;
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+  product?: Product;
+};
+
+export type ShopListing = {
+  id: string;
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  product?: Product;
+};
+
+// Inventory management functions
+export const getUserInventory = async (userId: string): Promise<UserInventory[]> => {
+  const { data, error } = await supabase
+    .from('user_inventory')
+    .select(`
+      *,
+      product:products (*)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user inventory:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const updateInventoryQuantity = async (userId: string, productId: string, quantity: number): Promise<boolean> => {
+  const { error } = await supabase
+    .from('user_inventory')
+    .upsert({
+      user_id: userId,
+      product_id: productId,
+      quantity: Math.max(0, quantity)
+    }, {
+      onConflict: 'user_id,product_id'
+    });
+
+  if (error) {
+    console.error('Error updating inventory quantity:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const getUserShopListings = async (userId: string): Promise<ShopListing[]> => {
+  const { data, error } = await supabase
+    .from('shop_listings')
+    .select(`
+      *,
+      product:products (*)
+    `)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching shop listings:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const getAllShopListings = async (): Promise<ShopListing[]> => {
+  const { data, error } = await supabase
+    .from('shop_listings')
+    .select(`
+      *,
+      product:products (*),
+      user_profiles!shop_listings_user_id_fkey (username)
+    `)
+    .eq('status', 'active')
+    .gt('quantity', 0)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all shop listings:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const createShopListing = async (userId: string, productId: string, quantity: number, price: number): Promise<boolean> => {
+  const { error } = await supabase
+    .from('shop_listings')
+    .upsert({
+      user_id: userId,
+      product_id: productId,
+      quantity,
+      price,
+      status: 'active'
+    }, {
+      onConflict: 'user_id,product_id'
+    });
+
+  if (error) {
+    console.error('Error creating shop listing:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const removeShopListing = async (userId: string, productId: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('shop_listings')
+    .delete()
+    .eq('user_id', userId)
+    .eq('product_id', productId);
+
+  if (error) {
+    console.error('Error removing shop listing:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const updateShopListingQuantity = async (userId: string, productId: string, quantity: number): Promise<boolean> => {
+  if (quantity <= 0) {
+    return removeShopListing(userId, productId);
+  }
+
+  const { error } = await supabase
+    .from('shop_listings')
+    .update({ quantity })
+    .eq('user_id', userId)
+    .eq('product_id', productId);
+
+  if (error) {
+    console.error('Error updating shop listing quantity:', error);
+    return false;
+  }
+
+  return true;
+};

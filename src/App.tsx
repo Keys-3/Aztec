@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { getUserInventory, getUserShopListings } from './lib/supabase';
 import Navigation from './components/Navigation';
 import HomePage from './components/HomePage';
 import Dashboard from './components/Dashboard';
@@ -12,7 +13,7 @@ import Footer from './components/Footer';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
 
   // Show loading screen while auth is initializing
   if (loading) {
