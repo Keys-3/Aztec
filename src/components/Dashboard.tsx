@@ -124,48 +124,59 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-2xl p-8 text-white">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">System Dashboard</h1>
-              <p className="text-lg text-emerald-100">Real-time monitoring and analytics for your hydroponic system</p>
-              <div className="flex items-center mt-4 text-sm text-emerald-200">
-                <Clock className="h-4 w-4 mr-2" />
-                Last updated: {new Date().toLocaleString()}
-              </div>
-            </div>
-            <div className="mt-6 lg:mt-0 flex space-x-4">
-              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                <Wifi className="h-5 w-5 text-emerald-200" />
-                <span className="text-sm">Connected</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                <Battery className="h-5 w-5 text-emerald-200" />
-                <span className="text-sm">98%</span>
-              </div>
-              <button className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 hover:bg-white/30 transition-all">
-                <RefreshCw className="h-5 w-5 text-emerald-200" />
-                <span className="text-sm">Refresh</span>
-              </button>
-            </div>
-          </div>
-        </div>
+<div className="mb-8 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-2xl p-6 sm:p-8 text-white">
+  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    {/* Left Section */}
+    <div>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2">System Dashboard</h1>
+      <p className="text-sm sm:text-lg text-emerald-100">
+        Real-time monitoring and analytics for your hydroponic system
+      </p>
+      <div className="flex items-center mt-3 sm:mt-4 text-xs sm:text-sm text-emerald-200">
+        <Clock className="h-4 w-4 mr-2" />
+        Last updated: {new Date().toLocaleString()}
+      </div>
+    </div>
 
+    {/* Right Section */}
+    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 mt-4 lg:mt-0">
+      <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+        <Wifi className="h-5 w-5 text-emerald-200" />
+        <span className="text-sm">Connected</span>
+      </div>
+      <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+        <Battery className="h-5 w-5 text-emerald-200" />
+        <span className="text-sm">98%</span>
+      </div>
+      <button className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 hover:bg-white/30 transition-all">
+        <RefreshCw className="h-5 w-5 text-emerald-200" />
+        <span className="text-sm">Refresh</span>
+      </button>
+    </div>
+  </div>
+</div>
+    
         {/* Sensor Readings */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Environmental Conditions</h2>
-            <div className="flex space-x-2">
-              <button className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all">
-                <Eye className="h-4 w-4" />
-                <span className="text-sm">View Details</span>
-              </button>
-              <button className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all">
-                <BarChart className="h-4 w-4" />
-                <span className="text-sm">Analytics</span>
-              </button>
-            </div>
-          </div>
+        <section className="mb-12  ">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4 sm:gap-0">
+  {/* Title */}
+  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+    Environmental Conditions
+  </h2>
+
+  {/* Buttons */}
+  <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+    <button className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+      <Eye className="h-4 w-4" />
+      <span>View Details</span>
+    </button>
+    <button className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+      <BarChart className="h-4 w-4" />
+      <span>Analytics</span>
+    </button>
+  </div>
+</div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {sensorData.map((sensor) => {
               const Icon = sensor.icon;
