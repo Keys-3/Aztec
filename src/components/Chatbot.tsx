@@ -44,7 +44,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
   const getBotResponse = (userMessage: string): { text: string; suggestions?: string[] } => {
     const message = userMessage.toLowerCase();
     
-    // Nutrient-related queries
+    // Nutrient-related queries.
     if (message.includes('nutrient') || message.includes('fertilizer') || message.includes('feeding')) {
       return {
         text: "For optimal nutrient management:\n\n• **EC Levels**: Maintain 1.2-2.0 mS/cm for most crops\n• **NPK Ratio**: Use 3-1-2 ratio for leafy greens, 1-3-2 for fruiting plants\n• **Micronutrients**: Ensure adequate iron, calcium, and magnesium\n• **Change Schedule**: Replace nutrient solution every 1-2 weeks\n\nMonitor your plants daily for signs of deficiency or excess!",
@@ -52,7 +52,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
       };
     }
     
-    // pH-related queries
+    // pH-related queries.
     if (message.includes('ph') || message.includes('acid') || message.includes('alkaline')) {
       return {
         text: "pH is crucial for nutrient uptake:\n\n• **Optimal Range**: 5.5-6.5 for most hydroponic crops\n• **Leafy Greens**: 6.0-7.0\n• **Tomatoes/Peppers**: 5.5-6.0\n• **Herbs**: 5.5-6.5\n\n**Adjustment Tips**:\n• Use pH Down (phosphoric acid) to lower\n• Use pH Up (potassium hydroxide) to raise\n• Check pH daily, adjust gradually",
