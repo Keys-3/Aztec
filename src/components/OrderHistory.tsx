@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Calendar, MapPin, Eye, Truck, CheckCircle, Clock } from 'lucide-react';
+import { X, Package, Calendar, MapPin, Eye, Truck, CheckCircle, Clock, Navigation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Order } from '../lib/supabase';
+import DeliveryTracker from './DeliveryTracker';
 
 interface OrderHistoryProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ isOpen, onClose }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -75,115 +77,136 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleTrackOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsTrackerOpen(true);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-            <Package className="h-6 w-6 mr-2 text-emerald-600" />
-            Order History
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
+    <>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+              <Package className="h-6 w-6 mr-2 text-emerald-600" />
+              Order History
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Orders Yet</h3>
-              <p className="text-gray-400">Start shopping to see your order history here!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-emerald-400 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-lg font-semibold text-gray-900">
-                        Order #{order.id.slice(-8).toUpperCase()}
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Orders Yet</h3>
+                <p className="text-gray-400">Start shopping to see your order history here!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-emerald-400 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-lg font-semibold text-gray-900">
+                          Order #{order.id.slice(-8).toUpperCase()}
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium border flex items-center space-x-1 ${getStatusColor(order.status)}`}>
+                          {getStatusIcon(order.status)}
+                          <span className="capitalize">{order.status}</span>
+                        </div>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium border flex items-center space-x-1 ${getStatusColor(order.status)}`}>
-                        {getStatusIcon(order.status)}
-                        <span className="capitalize">{order.status}</span>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-emerald-600">
+                          ₹{order.total_amount.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-emerald-600">
-                        ₹{order.total_amount.toFixed(2)}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Order Items */}
-                  {order.order_items && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Items:</h4>
-                      <div className="space-y-2">
-                        {order.order_items.map((item) => (
-                          <div key={item.id} className="flex items-center space-x-3 text-sm">
-                            {item.product && (
-                              <>
-                                <img
-                                  src={item.product.image_url}
-                                  alt={item.product.name}
-                                  className="w-10 h-10 object-cover rounded-lg"
-                                />
-                                <div className="flex-1">
-                                  <span className="text-gray-900">{item.product.name}</span>
-                                  <span className="text-gray-400 ml-2">x{item.quantity}</span>
-                                </div>
-                                <span className="text-emerald-600 font-medium">
-                                  ₹{(item.price * item.quantity).toFixed(2)}
-                                </span>
-                              </>
-                            )}
+                    {order.order_items && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Items:</h4>
+                        <div className="space-y-2">
+                          {order.order_items.map((item) => (
+                            <div key={item.id} className="flex items-center space-x-3 text-sm">
+                              {item.product && (
+                                <>
+                                  <img
+                                    src={item.product.image_url}
+                                    alt={item.product.name}
+                                    className="w-10 h-10 object-cover rounded-lg"
+                                  />
+                                  <div className="flex-1">
+                                    <span className="text-gray-900">{item.product.name}</span>
+                                    <span className="text-gray-400 ml-2">x{item.quantity}</span>
+                                  </div>
+                                  <span className="text-emerald-600 font-medium">
+                                    ₹{(item.price * item.quantity).toFixed(2)}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-2 text-sm text-gray-400">
+                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div>{order.shipping_address.full_name}</div>
+                          <div>{order.shipping_address.address_line_1}</div>
+                          {order.shipping_address.address_line_2 && (
+                            <div>{order.shipping_address.address_line_2}</div>
+                          )}
+                          <div>
+                            {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
                           </div>
-                        ))}
+                          <div>{order.shipping_address.country}</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Shipping Address */}
-                  <div className="flex items-start space-x-2 text-sm text-gray-400">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div>{order.shipping_address.full_name}</div>
-                      <div>{order.shipping_address.address_line_1}</div>
-                      {order.shipping_address.address_line_2 && (
-                        <div>{order.shipping_address.address_line_2}</div>
+                      {(order.status === 'processing' || order.status === 'shipped') && (
+                        <button
+                          onClick={() => handleTrackOrder(order)}
+                          className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          <span>Track Delivery</span>
+                        </button>
                       )}
-                      <div>
-                        {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
-                      </div>
-                      <div>{order.shipping_address.country}</div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <DeliveryTracker
+        isOpen={isTrackerOpen}
+        onClose={() => setIsTrackerOpen(false)}
+        order={selectedOrder}
+      />
+    </>
   );
 };
 
