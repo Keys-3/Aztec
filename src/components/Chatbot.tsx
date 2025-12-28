@@ -194,7 +194,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
           </div>
           <div>
             <h3 className="font-semibold">AI Farm Assistant</h3>
-            <p className="text-xs text-emerald-100">Online • Ready to help</p>
+            <p className="text-xs text-emerald-100">Powered by Gemini</p>
           </div>
         </div>
         <button

@@ -399,7 +399,7 @@ const Dashboard: React.FC = () => {
         {!isChatbotOpen && (
           <button
             onClick={() => setIsChatbotOpen(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center z-40"
+            className="fixed bottom-10 right-12 w-16 h-16 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center z-50"
           >
             <MessageCircle className="h-6 w-6" />
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
