@@ -37,22 +37,10 @@ const ContactPage: React.FC = () => {
       bio: '3rd Year B.Tech (C.S.E) student..'
     },
     {
-      name: 'Piyush Negi',
-      role: 'Head of R&D Team',
-      image: profile,
-      bio: '2nd Year B.Tech (I.T) student..'
-    },
-    {
       name: 'Parth Garg',
       role: 'Hardware Developer',
       image: profile,
       bio: '3rd Year B.Tech (C.S.E) student.'
-    },
-    {
-      name: 'Shreya Sharma',
-      role: 'Software Developer',
-      image: profile,
-      bio: '3rd Year B.Tech (A.I.M.L) student.'
     },
     {
       name: 'Prithvi Singh',
