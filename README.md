@@ -1,19 +1,53 @@
 # Aztec Vite React TypeScript Starter
 
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)  
+[![Node.js](https://img.shields.io/badge/Node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
+
+---
+
 ## Overview
-Aztec is a modern web development starter kit built with **Vite**, **React**, **TypeScript**, and **Tailwind CSS**. It includes an integrated **Supabase** client for backend services, a full ESLint setup for code quality, and a ready‑to‑go development environment.
+
+**Aztec** is a modern, production‑ready starter kit for building web applications with **Vite**, **React**, **TypeScript**, and **Tailwind CSS**.  
+It ships with:
+- Fast hot‑module‑replacement development server powered by Vite.
+- Type‑safe React components.
+- Utility‑first styling via Tailwind.
+- Integrated **Supabase** client for authentication, database, and storage.
+- Pre‑configured ESLint + Prettier for code quality.
+- Ready‑to‑deploy production builds.
+
+---
 
 ## Features
--  Fast dev server powered by Vite 5
--  Type‑safe React components with TypeScript
--  Utility‑first styling using Tailwind CSS
--  Pre‑configured ESLint and Prettier
--  Supabase client for authentication, database, and storage
--  Ready for production builds and deployment
 
-## Prerequisites
-- **Node.js** (v18 or newer) – [download](https://nodejs.org/)
-- **npm** (comes with Node) or **pnpm**/**yarn** if you prefer
+-  Vite 5 dev server with instant HMR.
+-  TypeScript for static typing.
+-  Tailwind CSS for rapid UI development.
+-  Supabase client pre‑wired (`src/lib/supabase.ts`).
+-  ESLint + Prettier with recommended rules.
+-  Ready scripts for dev, build, preview, and linting.
+-  Well‑organized project structure.
+
+---
+
+##  Tech Stack
+
+| Category | Tool |
+|----------|------|
+| Bundler | **Vite 5** |
+| UI Library | **React 18** |
+| Language | **TypeScript 5** |
+| Styling | **Tailwind CSS** |
+| Backend | **Supabase** |
+| Linting | **ESLint**, **Prettier** |
+| Testing (optional) | **Vitest**, **React Testing Library** |
+
+---
+
+##  Prerequisites
+
+- **Node.js** ≥ 18 (download from [nodejs.org](https://nodejs.org/))
+- **npm**, **pnpm**, or **yarn**
 - **Git** for version control
 
 ## Getting Started
