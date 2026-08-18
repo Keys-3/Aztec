@@ -1,9 +1,10 @@
 import React from 'react';
 import { Sprout, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
 import logo from "../assets/logo.png";
+
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-white border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -12,55 +13,55 @@ const Footer: React.FC = () => {
               <img src={logo} alt="logo" className="h-12 w-12" />
               <span className="text-xl font-bold text-emerald-600">Aztec</span>
             </div>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-gray-600 text-sm leading-relaxed">
               Revolutionizing agriculture through advanced hydroponic technology, 
               delivering sustainable and efficient farming solutions for the modern world.
             </p>
             <div className="flex space-x-4">
-              <Facebook className="h-5 w-5 text-gray-400 hover:text-emerald-400 cursor-pointer transition-colors" />
-              <Twitter className="h-5 w-5 text-gray-400 hover:text-emerald-400 cursor-pointer transition-colors" />
-              <Instagram className="h-5 w-5 text-gray-400 hover:text-emerald-400 cursor-pointer transition-colors" />
+              <Facebook className="h-5 w-5 text-gray-400 hover:text-emerald-600 cursor-pointer transition-colors" />
+              <Twitter className="h-5 w-5 text-gray-400 hover:text-emerald-600 cursor-pointer transition-colors" />
+              <Instagram className="h-5 w-5 text-gray-400 hover:text-emerald-600 cursor-pointer transition-colors" />
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-emerald-400">Quick Links</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="Home" className="text-gray-300 hover:text-emerald-400 transition-colors">Home</a></li>
-              <li><a href="Dashboard" className="text-gray-300 hover:text-emerald-400 transition-colors">Dashboard</a></li>
-              <li><a href="Marketplace" className="text-gray-300 hover:text-emerald-400 transition-colors">Inventory</a></li>
-              <li><a href="Cart" className="text-gray-300 hover:text-emerald-400 transition-colors">Cart</a></li>
-              <li><a href="Contact" className="text-gray-300 hover:text-emerald-400 transition-colors">Support</a></li>
+              <li><a href="Home" className="text-gray-600 hover:text-emerald-600 transition-colors">Home</a></li>
+              <li><a href="Dashboard" className="text-gray-600 hover:text-emerald-600 transition-colors">Dashboard</a></li>
+              <li><a href="Marketplace" className="text-gray-600 hover:text-emerald-600 transition-colors">Inventory</a></li>
+              <li><a href="Cart" className="text-gray-600 hover:text-emerald-600 transition-colors">Cart</a></li>
+              <li><a href="Contact" className="text-gray-600 hover:text-emerald-600 transition-colors">Support</a></li>
             </ul>
           </div>
 
           {/* Services */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-emerald-400">Services</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Services</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">System Installation</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Monitoring & Analytics</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Maintenance</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-emerald-400 transition-colors">Training</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-emerald-600 transition-colors">System Installation</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-emerald-600 transition-colors">Monitoring & Analytics</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-emerald-600 transition-colors">Maintenance</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-emerald-600 transition-colors">Training</a></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-emerald-400">Contact Info</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Contact Info</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-emerald-400" />
-                <span className="text-gray-300">+91 8076597189</span>
+                <Phone className="h-4 w-4 text-emerald-600" />
+                <span className="text-gray-600">+91 8076597189</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4 text-emerald-400" />
-                <span className="text-gray-300">info@aztechydroponics.com</span>
+                <Mail className="h-4 w-4 text-emerald-600" />
+                <span className="text-gray-600">info@aztechydroponics.com</span>
               </div>
               <div className="flex items-start space-x-2">
-                <MapPin className="h-4 w-4 text-emerald-400 mt-0.5" />
-                <span className="text-gray-300">
+                <MapPin className="h-4 w-4 text-emerald-600 mt-0.5" />
+                <span className="text-gray-600">
                   Inderprastha Engineering College<br />
                   Ghaziabad, Delhi<br/>
                   India
@@ -70,7 +71,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+        <div className="border-t border-gray-200 mt-8 pt-8 text-center text-sm text-gray-500">
           <p>&copy; 2025 Aztec Hydroponics. All rights reserved.</p>
         </div>
       </div>

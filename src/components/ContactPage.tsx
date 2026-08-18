@@ -13,14 +13,30 @@ const ContactPage: React.FC = () => {
     type: 'general'
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setContactForm({ name: '', email: '', subject: '', message: '', type: 'general' });
-    }, 3000);
+    try {
+      const response = await fetch('http://localhost:3001/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactForm),
+      });
+      if (response.ok) {
+        setIsSubmitted(true);
+        setErrorMessage('');
+        setTimeout(() => {
+          setIsSubmitted(false);
+          setContactForm({ name: '', email: '', subject: '', message: '', type: 'general' });
+        }, 3000);
+      } else {
+        setErrorMessage('Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage('Network error. Failed to connect to the server.');
+    }
   };
 
   const teamMembers = [
@@ -104,6 +120,12 @@ const ContactPage: React.FC = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {errorMessage && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3 text-red-600">
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                      <p className="text-sm font-medium">{errorMessage}</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">

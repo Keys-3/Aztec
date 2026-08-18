@@ -4,6 +4,7 @@ import heroVideo from "../assets/ponic.mp4";
 const HomePage: React.FC = () => {
   const [feedback, setFeedback] = useState({ name: '', email: '', message: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const hydroponicImages = [
@@ -29,13 +30,34 @@ const HomePage: React.FC = () => {
     }
   ];
 
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFeedback({ name: '', email: '', message: '' });
-    }, 3000);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3001/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: feedback.name,
+          email: feedback.email,
+          subject: 'General Feedback',
+          message: feedback.message,
+          type: 'General'
+        }),
+      });
+      if (response.ok) {
+        setIsSubmitted(true);
+        setTimeout(() => {
+          setIsSubmitted(false);
+          setFeedback({ name: '', email: '', message: '' });
+        }, 3000);
+      } else {
+        setError('Failed to send feedback. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Network error. Failed to send feedback.');
+    }
   };
 
   const nextImage = () => {
@@ -381,6 +403,11 @@ const HomePage: React.FC = () => {
               onSubmit={handleFeedbackSubmit}
               className="bg-gray-50 rounded-xl shadow-lg p-8 space-y-6"
             >
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-medium">
+                  {error}
+                </div>
+              )}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Name

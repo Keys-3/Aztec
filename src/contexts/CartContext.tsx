@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Product, CartItem, UserInventory, ShopListing } from '../lib/supabase';
+import { Product, CartItem, UserInventory, ShopListing } from '../lib/firebase';
 
 interface SellingItem {
   product: Product;

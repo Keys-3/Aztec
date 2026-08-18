@@ -1,10 +1,11 @@
 import React from 'react';
-import { Menu, X, Sprout, Home, BarChart3, ShoppingBag, Phone, ShoppingCart } from 'lucide-react';
+import { Home, ShoppingBag, ShoppingCart, BarChart3, Phone, Menu, X, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import UserProfile from './UserProfile';
 import AuthModal from './AuthModal';
 import logo from "../assets/logo.png";
+
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
@@ -18,9 +19,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'marketplace', label: 'Inventory', icon: ShoppingBag },
-    { id: 'cart', label: 'Cart', icon: ShoppingCart },
+    ...(user?.role === 'farmer' || user?.role === 'admin' ? [{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 }] : []),
+    ...(user?.role === 'farmer' || user?.role === 'admin' ? [{ id: 'inventory', label: 'Inventory', icon: Package }] : []),
+    ...(user?.role === 'customer' || user?.role === 'admin' ? [{ id: 'marketplace', label: 'Marketplace', icon: ShoppingBag }] : []),
+    ...(user?.role === 'customer' || user?.role === 'admin' ? [{ id: 'cart', label: 'Cart', icon: ShoppingCart }] : []),
     { id: 'contact', label: 'Contact', icon: Phone },
   ];
 

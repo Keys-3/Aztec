@@ -1,37 +1,99 @@
 import React from 'react';
-import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart, MessageCircle } from 'lucide-react';
+import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart, MessageCircle, Sun, Wind } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import AuthModal from './AuthModal';
 import Chatbot from './Chatbot';
+import { createProduct, addInventoryQuantity } from '../lib/firebase';
+import SensorDetailsModal from './SensorDetailsModal';
+import AnalyticsModal from './AnalyticsModal';
+import ManagePlantsModal from './ManagePlantsModal';
+import HarvestModal from './HarvestModal';
 
 const Dashboard: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = React.useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = React.useState(false);
+  const [isManagePlantsOpen, setIsManagePlantsOpen] = React.useState(false);
+  const [selectedSensor, setSelectedSensor] = React.useState<any | null>(null);
+  const [harvestingPlant, setHarvestingPlant] = React.useState<string | null>(null);
+  const [message, setMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const [visibleSensors, setVisibleSensors] = React.useState<string[]>([]);
 
-  const handleBuyClick = () => {
+  React.useEffect(() => {
+    if (user) {
+      const savedSensors = localStorage.getItem(`aztec-dashboard-sensors-${user.id}`);
+      if (savedSensors) {
+        setVisibleSensors(JSON.parse(savedSensors));
+      } else {
+        // Default sensors if none selected
+        setVisibleSensors(['temperature', 'humidity', 'ph', 'ec', 'light', 'co2', 'water_temp', 'do']);
+      }
+    } else {
+        setVisibleSensors(['temperature', 'humidity', 'ph', 'ec', 'light', 'co2', 'water_temp', 'do']);
+    }
+  }, [user]);
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const DEFAULT_IMAGES: Record<string, string> = {
+    tomato: 'https://images.pexels.com/photos/533280/pexels-photo-533280.jpeg',
+    lettuce: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
+    spinach: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
+    herbs: 'https://images.pexels.com/photos/2892305/pexels-photo-2892305.jpeg',
+    default: 'https://images.pexels.com/photos/1125130/pexels-photo-1125130.jpeg'
+  };
+
+  const handleHarvestClick = (plantName: string) => {
     if (!user) {
       setIsAuthModalOpen(true);
-    } else {
-      // Add sample product to cart
-      const sampleProduct = {
-        id: '550e8400-e29b-41d4-a716-446655440007',
-        name: 'Fresh Lettuce',
-        category: 'leafy-greens',
-        price: 399,
-        stock: 25,
-        image_url: 'https://images.pexels.com/photos/1352199/pexels-photo-1352199.jpeg',
-        description: 'Fresh, crisp lettuce grown in our hydroponic system.',
-        harvest_date: '2025-01-10',
+      return;
+    }
+    setHarvestingPlant(plantName);
+  };
+
+  const handleHarvestSubmit = async (quantity: number) => {
+    if (!user || !harvestingPlant) return;
+
+    try {
+      const lowerName = harvestingPlant.toLowerCase();
+      let selectedImage = DEFAULT_IMAGES.default;
+      for (const [key, url] of Object.entries(DEFAULT_IMAGES)) {
+        if (lowerName.includes(key)) {
+          selectedImage = url;
+          break;
+        }
+      }
+
+      const cleanName = harvestingPlant.split('-')[0].trim(); // "Lettuce - Zone A" -> "Lettuce"
+
+      const newProductData = {
+        name: `Fresh ${cleanName}`,
+        category: lowerName.includes('tomato') ? 'fruits' : lowerName.includes('herb') ? 'herbs' : 'leafy-greens',
+        description: `Freshly harvested ${cleanName} from our hydroponic system.`,
         quality: 'Premium',
-        rating: 4.9,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        price: 0, 
+        stock: 0,
+        image_url: selectedImage,
+        harvest_date: new Date().toISOString(),
+        rating: 5.0, 
       };
-      addToCart(sampleProduct, 1);
-      alert('Product added to cart!');
+
+      const newProductId = await createProduct(newProductData);
+      
+      if (newProductId) {
+        await addInventoryQuantity(user.id, newProductId, quantity);
+        setHarvestingPlant(null);
+        showMessage('success', `Successfully harvested ${quantity} units of ${cleanName} and added to your Inventory!`);
+      }
+    } catch (error) {
+      console.error('Error harvesting plant:', error);
+      showMessage('error', 'Failed to harvest plant.');
     }
   };
 
@@ -79,8 +141,54 @@ const Dashboard: React.FC = () => {
       range: '1.2-2.0 optimal',
       percentage: 80,
       color: 'amber'
+    },
+    { 
+      id: 'light',
+      name: 'Light Intensity', 
+      value: '420 PAR', 
+      status: 'optimal', 
+      icon: Sun,
+      trend: '+5% from yesterday',
+      range: '400-600 PAR optimal',
+      percentage: 95,
+      color: 'amber'
+    },
+    { 
+      id: 'co2',
+      name: 'CO2 Levels', 
+      value: '450 ppm', 
+      status: 'good', 
+      icon: Wind,
+      trend: 'Stable',
+      range: '400-800 ppm optimal',
+      percentage: 85,
+      color: 'emerald'
+    },
+    { 
+      id: 'water_temp',
+      name: 'Water Temp', 
+      value: '20.5°C', 
+      status: 'optimal', 
+      icon: Thermometer,
+      trend: '-0.5°C from yesterday',
+      range: '18-22°C optimal',
+      percentage: 90,
+      color: 'blue'
+    },
+    { 
+      id: 'do',
+      name: 'Dissolved Oxygen', 
+      value: '8.2 mg/L', 
+      status: 'optimal', 
+      icon: Activity,
+      trend: '+0.1 mg/L',
+      range: '5-10 mg/L optimal',
+      percentage: 95,
+      color: 'purple'
     }
   ];
+
+  const filteredSensors = sensorData.filter(sensor => visibleSensors.includes(sensor.id));
 
   const systemStatus = [
     { name: 'Water Pump', status: 'running', lastMaintenance: '2 days ago' },
@@ -91,12 +199,12 @@ const Dashboard: React.FC = () => {
     { name: 'Temperature Control', status: 'running', lastMaintenance: '1 day ago' },
   ];
 
-  const plantMetrics = [
-    { plant: 'Lettuce - Zone A', growth: '92%', health: 'Excellent', harvestDate: '3 days' },
-    { plant: 'Tomatoes - Zone B', growth: '78%', health: 'Good', harvestDate: '2 weeks' },
-    { plant: 'Herbs - Zone C', growth: '85%', health: 'Excellent', harvestDate: '1 week' },
-    { plant: 'Spinach - Zone D', growth: '95%', health: 'Excellent', harvestDate: '2 days' },
-  ];
+  const [plants, setPlants] = React.useState([
+    { id: '1', plant: 'Lettuce - Zone A', growth: '92%', health: 'Excellent', harvestDate: '2025-02-14', status: 'Growing', planted: '2025-01-15' },
+    { id: '2', plant: 'Tomatoes - Zone B', growth: '78%', health: 'Good', harvestDate: '2025-02-20', status: 'Growing', planted: '2025-01-10' },
+    { id: '3', plant: 'Herbs - Zone C', growth: '85%', health: 'Excellent', harvestDate: '2025-02-05', status: 'Ready', planted: '2025-01-01' },
+    { id: '4', plant: 'Spinach - Zone D', growth: '95%', health: 'Excellent', harvestDate: '2025-02-10', status: 'Ready', planted: '2024-12-05' },
+  ]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -155,6 +263,24 @@ const Dashboard: React.FC = () => {
     </div>
   </div>
 </div>
+
+        {/* Global Messages */}
+        {message && (
+          <div className="fixed top-20 right-8 z-50 animate-fade-in-up">
+            <div className={`p-4 rounded-xl shadow-2xl flex items-center space-x-3 backdrop-blur-md border ${
+              message.type === 'success' 
+                ? 'bg-emerald-50/90 text-emerald-800 border-emerald-200' 
+                : 'bg-red-50/90 text-red-800 border-red-200'
+            }`}>
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              )}
+              <span className="font-medium">{message.text}</span>
+            </div>
+          </div>
+        )}
     
         {/* Sensor Readings */}
         <section className="mb-12  ">
@@ -166,11 +292,11 @@ const Dashboard: React.FC = () => {
 
   {/* Buttons */}
   <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-    <button className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+    <button onClick={() => setIsAnalyticsOpen(true)} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
       <Eye className="h-4 w-4" />
       <span>View Details</span>
     </button>
-    <button className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+    <button onClick={() => setIsAnalyticsOpen(true)} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
       <BarChart className="h-4 w-4" />
       <span>Analytics</span>
     </button>
@@ -178,7 +304,7 @@ const Dashboard: React.FC = () => {
 </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {sensorData.map((sensor) => {
+            {filteredSensors.map((sensor) => {
               const Icon = sensor.icon;
               const getColorClasses = (color: string) => {
                 const colors = {
@@ -191,7 +317,11 @@ const Dashboard: React.FC = () => {
               };
               
               return (
-                <div key={sensor.id} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                <div 
+                  key={sensor.id} 
+                  onClick={() => setSelectedSensor(sensor)}
+                  className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
+                >
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br ${getColorClasses(sensor.color).split(' ')[0]} ${getColorClasses(sensor.color).split(' ')[1]}`}>
                       <Icon className="h-6 w-6 text-white" />
@@ -233,7 +363,7 @@ const Dashboard: React.FC = () => {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Plant Health & Growth</h2>
-            <button className="flex items-center space-x-2 bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition-all">
+            <button onClick={() => setIsManagePlantsOpen(true)} className="flex items-center space-x-2 bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition-all">
               <Settings className="h-4 w-4" />
               <span className="text-sm">Manage Plants</span>
             </button>
@@ -251,8 +381,8 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {plantMetrics.map((plant, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  {plants.map((plant) => (
+                    <tr key={plant.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
@@ -288,11 +418,11 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={handleBuyClick}
+                          onClick={() => handleHarvestClick(plant.plant)}
                           className="bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center space-x-1"
                         >
-                          <ShoppingCart className="h-3 w-3" />
-                          <span>Ready</span>
+                          <CheckCircle className="h-3 w-3" />
+                          <span>Harvest</span>
                         </button>
                       </td>
                     </tr>
@@ -389,10 +519,32 @@ const Dashboard: React.FC = () => {
           onClose={() => setIsAuthModalOpen(false)} 
         />
         
-        {/* Chatbot */}
         <Chatbot 
           isOpen={isChatbotOpen} 
           onClose={() => setIsChatbotOpen(false)} 
+        />
+
+        {/* Modals */}
+        <SensorDetailsModal
+          isOpen={!!selectedSensor}
+          onClose={() => setSelectedSensor(null)}
+          sensor={selectedSensor}
+        />
+        <AnalyticsModal
+          isOpen={isAnalyticsOpen}
+          onClose={() => setIsAnalyticsOpen(false)}
+        />
+        <ManagePlantsModal
+          isOpen={isManagePlantsOpen}
+          onClose={() => setIsManagePlantsOpen(false)}
+          plants={plants}
+          setPlants={setPlants}
+        />
+        <HarvestModal
+          isOpen={!!harvestingPlant}
+          onClose={() => setHarvestingPlant(null)}
+          plantName={harvestingPlant}
+          onConfirm={handleHarvestSubmit}
         />
         
         {/* Floating Chatbot Button */}

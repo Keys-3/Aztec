@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { MessageCircle, Send, X, Bot, User, Lightbulb, Droplets, Thermometer, Leaf } from 'lucide-react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Message {
   id: string;
@@ -41,106 +42,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const getBotResponse = (userMessage: string): { text: string; suggestions?: string[] } => {
-    const message = userMessage.toLowerCase();
-    
-    // Nutrient-related queries.
-    if (message.includes('nutrient') || message.includes('fertilizer') || message.includes('feeding')) {
-      return {
-        text: "For optimal nutrient management:\n\n• **EC Levels**: Maintain 1.2-2.0 mS/cm for most crops\n• **NPK Ratio**: Use 3-1-2 ratio for leafy greens, 1-3-2 for fruiting plants\n• **Micronutrients**: Ensure adequate iron, calcium, and magnesium\n• **Change Schedule**: Replace nutrient solution every 1-2 weeks\n\nMonitor your plants daily for signs of deficiency or excess!",
-        suggestions: ["What are signs of nutrient deficiency?", "How often should I change nutrients?", "Best nutrients for tomatoes?"]
-      };
-    }
-    
-    // pH-related queries.
-    if (message.includes('ph') || message.includes('acid') || message.includes('alkaline')) {
-      return {
-        text: "pH is crucial for nutrient uptake:\n\n• **Optimal Range**: 5.5-6.5 for most hydroponic crops\n• **Leafy Greens**: 6.0-7.0\n• **Tomatoes/Peppers**: 5.5-6.0\n• **Herbs**: 5.5-6.5\n\n**Adjustment Tips**:\n• Use pH Down (phosphoric acid) to lower\n• Use pH Up (potassium hydroxide) to raise\n• Check pH daily, adjust gradually",
-        suggestions: ["How to lower pH naturally?", "Why does pH keep changing?", "Best pH for herbs?"]
-      };
-    }
-    
-    // Wilting/plant health issues
-    if (message.includes('wilt') || message.includes('dying') || message.includes('sick') || message.includes('problem')) {
-      return {
-        text: "Plant wilting can have several causes:\n\n**Common Issues**:\n• **Overwatering**: Check for root rot, ensure proper drainage\n• **Underwatering**: Verify pump function and water levels\n• **Nutrient Burn**: High EC levels, dilute solution\n• **pH Imbalance**: Test and adjust to optimal range\n• **Temperature Stress**: Keep water temp 65-75°F\n• **Light Burn**: Adjust LED distance/intensity\n\nCheck these factors systematically!",
-        suggestions: ["How to check for root rot?", "What's the ideal water temperature?", "Signs of nutrient burn?"]
-      };
-    }
-    
-    // Yield optimization
-    if (message.includes('yield') || message.includes('production') || message.includes('harvest') || message.includes('grow more')) {
-      return {
-        text: "To maximize your hydroponic yields:\n\n**Environmental Control**:\n• Maintain 65-75°F temperature\n• Keep humidity at 50-70%\n• Provide 14-16 hours of light daily\n\n**Nutrition**:\n• Use quality hydroponic nutrients\n• Monitor EC and pH daily\n• Supplement with CalMag if needed\n\n**Plant Care**:\n• Prune regularly for better airflow\n• Support heavy fruiting plants\n• Harvest at peak ripeness",
-        suggestions: ["Best lighting schedule?", "How to prune tomatoes?", "When to harvest lettuce?"]
-      };
-    }
-    
-    // Lighting queries
-    if (message.includes('light') || message.includes('led') || message.includes('lamp')) {
-      return {
-        text: "Proper lighting is essential:\n\n**LED Recommendations**:\n• **Leafy Greens**: 25-35 watts per sq ft\n• **Fruiting Plants**: 35-50 watts per sq ft\n• **Distance**: 12-24 inches from canopy\n\n**Light Schedule**:\n• **Leafy Greens**: 14-16 hours daily\n• **Fruiting Plants**: 12-14 hours daily\n• **Seedlings**: 16-18 hours daily\n\n**Spectrum**: Full spectrum LEDs work best, with emphasis on blue (vegetative) and red (flowering) light.",
-        suggestions: ["Best LED brands?", "How high should lights be?", "Light schedule for herbs?"]
-      };
-    }
-    
-    // Temperature queries
-    if (message.includes('temperature') || message.includes('heat') || message.includes('cold') || message.includes('temp')) {
-      return {
-        text: "Temperature control is vital:\n\n**Optimal Ranges**:\n• **Air Temperature**: 65-75°F (18-24°C)\n• **Water Temperature**: 65-72°F (18-22°C)\n• **Night Temperature**: 5-10°F cooler than day\n\n**Temperature Issues**:\n• **Too Hot**: Increases metabolism, reduces oxygen\n• **Too Cold**: Slows growth, increases disease risk\n\n**Solutions**: Use fans, heaters, chillers, or insulation as needed.",
-        suggestions: ["How to cool water temperature?", "Best fans for ventilation?", "Winter growing tips?"]
-      };
-    }
-    
-    // Pest and disease queries
-    if (message.includes('pest') || message.includes('bug') || message.includes('disease') || message.includes('mold')) {
-      return {
-        text: "Pest and disease prevention:\n\n**Common Hydroponic Pests**:\n• **Aphids**: Use beneficial insects or neem oil\n• **Spider Mites**: Increase humidity, use predatory mites\n• **Fungus Gnats**: Reduce moisture, use yellow sticky traps\n\n**Disease Prevention**:\n• Maintain proper air circulation\n• Keep humidity below 70%\n• Use sterile growing media\n• Clean system regularly\n\n**Organic Solutions**: Neem oil, beneficial bacteria, companion planting",
-        suggestions: ["How to identify spider mites?", "Organic pest control methods?", "Preventing root rot?"]
-      };
-    }
-    
-    // System maintenance
-    if (message.includes('clean') || message.includes('maintenance') || message.includes('system')) {
-      return {
-        text: "Regular maintenance ensures healthy crops:\n\n**Weekly Tasks**:\n• Check and adjust pH/EC levels\n• Top off water reservoir\n• Inspect plants for pests/diseases\n• Clean air stones and pumps\n\n**Monthly Tasks**:\n• Complete nutrient solution change\n• Clean reservoir and lines\n• Calibrate pH/EC meters\n• Replace air stones if needed\n\n**Quarterly Tasks**:\n• Deep clean entire system\n• Replace tubing and fittings\n• Service pumps and equipment",
-        suggestions: ["How to clean reservoir?", "When to replace air stones?", "Calibrating pH meters?"]
-      };
-    }
-    
-    // Specific crop queries
-    if (message.includes('lettuce') || message.includes('leafy')) {
-      return {
-        text: "Growing lettuce hydroponically:\n\n**Optimal Conditions**:\n• pH: 6.0-7.0\n• EC: 1.2-1.8 mS/cm\n• Temperature: 60-70°F\n• Light: 14-16 hours daily\n\n**Varieties**: Butterhead, romaine, and leaf lettuce work best\n**Harvest**: 30-45 days from seed\n**Spacing**: 6-8 inches apart\n\n**Pro Tip**: Harvest outer leaves first for continuous production!",
-        suggestions: ["Best lettuce varieties?", "Lettuce growing timeline?", "Preventing lettuce bolting?"]
-      };
-    }
-    
-    if (message.includes('tomato') || message.includes('tomatoes')) {
-      return {
-        text: "Growing tomatoes hydroponically:\n\n**Optimal Conditions**:\n• pH: 5.5-6.0\n• EC: 2.0-3.0 mS/cm\n• Temperature: 70-75°F day, 65-70°F night\n• Light: 12-14 hours daily\n\n**Support**: Use stakes or trellises\n**Pruning**: Remove suckers and lower leaves\n**Pollination**: Hand pollinate or use fans\n\n**Harvest**: 70-85 days from seed, pick when fully colored but firm",
-        suggestions: ["How to prune tomatoes?", "Hand pollination techniques?", "Best tomato varieties for hydroponics?"]
-      };
-    }
-    
-    if (message.includes('herb') || message.includes('basil') || message.includes('cilantro')) {
-      return {
-        text: "Growing herbs hydroponically:\n\n**Optimal Conditions**:\n• pH: 5.5-6.5\n• EC: 1.2-1.6 mS/cm\n• Temperature: 65-75°F\n• Light: 14-16 hours daily\n\n**Popular Herbs**: Basil, cilantro, parsley, mint, oregano\n**Harvest**: Pinch regularly to encourage growth\n**Spacing**: 4-6 inches apart\n\n**Pro Tip**: Harvest in the morning for best flavor and essential oil content!",
-        suggestions: ["Best herbs for beginners?", "How to harvest basil?", "Preventing herbs from flowering?"]
-      };
-    }
-    
-    // Default response
-    return {
-      text: "I'd be happy to help you with that! I can assist with:\n\n• **Plant Health**: Diagnosing issues and solutions\n• **Nutrition**: Optimal feeding schedules and ratios\n• **Environment**: Temperature, humidity, and lighting\n• **Pest Control**: Organic and integrated pest management\n• **Crop-Specific**: Growing tips for different vegetables and herbs\n• **System Maintenance**: Keeping your setup running smoothly\n\nWhat specific aspect would you like to know more about?",
-      suggestions: [
-        "Help with plant nutrition",
-        "Troubleshoot plant problems",
-        "Optimize growing conditions",
-        "System maintenance tips"
-      ]
-    };
-  };
+    // Default suggestions for UI
+    const defaultSuggestions = [
+      "Help with plant nutrition",
+      "Troubleshoot plant problems",
+      "Optimize growing conditions",
+      "System maintenance tips"
+    ];
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
@@ -157,20 +65,57 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
     setInputText('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    setTimeout(() => {
-      const botResponse = getBotResponse(text);
+    try {
+      const apiKey = import.meta.env.VITE_PUBLIC_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || 'AQ.Ab8RN6IWf1ctG8NZF5VZPad0QiXUmI3YBiThgKnjEPuaUrozfA';
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        systemInstruction: {
+          role: "system",
+          parts: [{ text: "You are an AI assistant for a hydroponic farming application called Aztec. You should be helpful, friendly, and knowledgeable about hydroponics, farming, crop management, and general topics. Answer general questions as well, but always be ready to help with farm-related queries." }]
+        }
+      });
+      
+      const formattedHistory = messages.slice(1).map(m => ({
+        role: m.isBot ? "model" : "user",
+        parts: [{ text: m.text }]
+      }));
+
+      const chat = model.startChat({
+        history: formattedHistory
+      });
+
+      const result = await chat.sendMessage(text.trim());
+      const responseText = result.response.text();
+      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponse.text,
+        text: responseText,
         isBot: true,
         timestamp: new Date(),
-        suggestions: botResponse.suggestions
+        suggestions: []
       };
 
       setMessages(prev => [...prev, botMessage]);
+    } catch (error: any) {
+      console.error('Chat error:', error);
+      let errorMessage = 'Network error connecting to the AI.';
+      if (error.message && error.message.includes('404')) {
+        errorMessage = "Error: This API Key does not have the Generative Language API enabled, or the model was not found.";
+      } else if (error.message && error.message.includes('400')) {
+        errorMessage = "Error: API key is invalid or badly formatted.";
+      }
+
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        text: errorMessage,
+        isBot: true,
+        timestamp: new Date(),
+        suggestions: defaultSuggestions
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 1000);
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {

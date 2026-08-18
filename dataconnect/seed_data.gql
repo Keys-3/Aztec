@@ -1,0 +1,71 @@
+mutation CreateSeedData @transaction {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Alice Smith",
+      email: "alice@example.com",
+      role: "Farmer"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Bob Jones",
+      email: "bob@example.com",
+      role: "Customer"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      name: "Charlie Brown",
+      email: "charlie@example.com",
+      role: "Customer"
+    }
+  ])
+  product_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440000",
+      name: "Organic Apples",
+      price: 5.99,
+      stockQuantity: 100,
+      farmerId: "550e8400-e29b-41d4-a716-446655440000"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440001",
+      name: "Fresh Honey",
+      price: 12.50,
+      stockQuantity: 50,
+      farmerId: "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ])
+  order_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440000",
+      totalAmount: 18.49,
+      status: "Completed",
+      createdAt: "2023-10-27T10:00:00Z",
+      customerId: "550e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+  orderItem_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440000",
+      orderId: "750e8400-e29b-41d4-a716-446655440000",
+      productId: "650e8400-e29b-41d4-a716-446655440000",
+      quantity: 2,
+      priceAtTimeOfPurchase: 5.99
+    },
+    {
+      id: "850e8400-e29b-41d4-a716-446655440001",
+      orderId: "750e8400-e29b-41d4-a716-446655440000",
+      productId: "650e8400-e29b-41d4-a716-446655440001",
+      quantity: 1,
+      priceAtTimeOfPurchase: 12.50
+    }
+  ])
+  cart_insertMany(data: [
+    {
+      id: "950e8400-e29b-41d4-a716-446655440000",
+      customerId: "550e8400-e29b-41d4-a716-446655440002",
+      productId: "650e8400-e29b-41d4-a716-446655440001",
+      quantity: 1
+    }
+  ])
+}

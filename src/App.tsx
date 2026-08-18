@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
-import { getUserInventory, getUserShopListings } from './lib/supabase';
+import { getUserInventory, getUserShopListings } from './lib/firebase';
 import Navigation from './components/Navigation';
 import HomePage from './components/HomePage';
 import Dashboard from './components/Dashboard';
 import Marketplace from './components/Marketplace';
+import Inventory from './components/Inventory';
 import CartPage from './components/CartPage';
 import ContactPage from './components/ContactPage';
 import Footer from './components/Footer';
@@ -14,6 +15,22 @@ import Footer from './components/Footer';
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const { loading, user } = useAuth();
+
+  useEffect(() => {
+    // Redirect away from restricted pages if user doesn't have access
+    if (currentPage === 'dashboard' && (!user || (user.role !== 'farmer' && user.role !== 'admin'))) {
+      setCurrentPage('home');
+    }
+    if (currentPage === 'cart' && (!user || (user.role !== 'customer' && user.role !== 'admin'))) {
+      setCurrentPage('home');
+    }
+    if (currentPage === 'marketplace' && (!user || (user.role !== 'customer' && user.role !== 'admin'))) {
+      setCurrentPage('home');
+    }
+    if (currentPage === 'inventory' && (!user || (user.role !== 'farmer' && user.role !== 'admin'))) {
+      setCurrentPage('home');
+    }
+  }, [user, currentPage]);
 
   // Show loading screen while auth is initializing
   if (loading) {
@@ -33,11 +50,17 @@ const AppContent: React.FC = () => {
       case 'home':
         return <HomePage />;
       case 'dashboard':
-        return <Dashboard />;
+        if (user && (user.role === 'farmer' || user.role === 'admin')) return <Dashboard />;
+        return <HomePage />;
       case 'marketplace':
-        return <Marketplace />;
+        if (user && (user.role === 'customer' || user.role === 'admin')) return <Marketplace onNavigate={setCurrentPage} />;
+        return <HomePage />;
+      case 'inventory':
+        if (user && (user.role === 'farmer' || user.role === 'admin')) return <Inventory />;
+        return <HomePage />;
       case 'cart':
-        return <CartPage />;
+        if (user && (user.role === 'customer' || user.role === 'admin')) return <CartPage />;
+        return <HomePage />;
       case 'contact':
         return <ContactPage />;
       default:

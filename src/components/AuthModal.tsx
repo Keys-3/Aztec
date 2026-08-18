@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface AuthModalProps {
@@ -20,12 +20,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     password: '',
     username: '',
     contact: '',
+    role: 'customer' as 'customer' | 'farmer' | 'admin',
   });
 
   const { signIn, signUp } = useAuth();
 
   const resetForm = () => {
-    setFormData({ email: '', password: '', username: '', contact: '' });
+    setFormData({ email: '', password: '', username: '', contact: '', role: 'customer' });
     setMessage(null);
     setShowPassword(false);
     setRememberMe(false);
@@ -51,7 +52,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           setTimeout(() => handleClose(), 1500);
         }
       } else {
-        const { error } = await signUp(formData.email, formData.password, formData.username, formData.contact, rememberMe);
+        const { error } = await signUp(formData.email, formData.password, formData.username, formData.contact, formData.role, rememberMe);
         if (error) {
           setMessage({ type: 'error', text: error.message || 'Signup failed. Please try again.' });
         } else {
@@ -142,6 +143,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                       placeholder="Enter your contact number"
                       required
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Type
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <select
+                      id="role"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all appearance-none bg-white"
+                      required
+                    >
+                      <option value="customer">Customer</option>
+                      <option value="farmer">Farmer</option>
+                      <option value="admin">Admin</option>
+                    </select>
                   </div>
                 </div>
               </>

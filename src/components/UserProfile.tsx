@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { User, LogOut, Settings, ShoppingBag, ChevronDown, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import OrderHistory from './OrderHistory';
+import AccountSettingsModal from './AccountSettingsModal';
 
 const UserProfile: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const { user, signOut } = useAuth();
 
   if (!user) return null;
@@ -59,7 +61,13 @@ const UserProfile: React.FC = () => {
                 <ShoppingBag className="h-4 w-4" />
                 <span>My Orders</span>
               </button>
-              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+              <button 
+                onClick={() => {
+                  setShowAccountSettings(true);
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+              >
                 <Settings className="h-4 w-4" />
                 <span>Account Settings</span>
               </button>
@@ -81,6 +89,14 @@ const UserProfile: React.FC = () => {
         <OrderHistory 
           isOpen={showOrderHistory} 
           onClose={() => setShowOrderHistory(false)} 
+        />
+      )}
+
+      {/* Account Settings Modal */}
+      {showAccountSettings && (
+        <AccountSettingsModal 
+          isOpen={showAccountSettings} 
+          onClose={() => setShowAccountSettings(false)} 
         />
       )}
     </div>

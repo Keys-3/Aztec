@@ -1,0 +1,97 @@
+mutation CreateUser @transaction @auth(level: USER) {
+  user_insert(data: {id_expr: "auth.uid", name: "New User", email: "user@example.com", role: "customer"})
+}
+
+mutation CreateCartItem($productId: UUID!, $quantity: Int!) @transaction @auth(level: USER) {
+  cart_insert(data: {customerId_expr: "auth.uid", productId: $productId, quantity: $quantity})
+}
+
+mutation CreateOrder($total: Float!, $status: String!) @transaction @auth(level: USER) {
+  order_insert(data: {customerId_expr: "auth.uid", totalAmount: $total, status: $status, createdAt_expr: "request.time"})
+}
+
+mutation CreateOrderItem($orderId: UUID!, $productId: UUID!, $price: Float!, $qty: Int!) @transaction @auth(level: USER) {
+  orderItem_insert(data: {orderId: $orderId, productId: $productId, priceAtTimeOfPurchase: $price, quantity: $qty})
+}
+
+mutation CreateProduct($name: String!, $price: Float!, $stock: Int!) @transaction @auth(level: USER) {
+  product_insert(data: {name: $name, price: $price, stockQuantity: $stock, farmerId_expr: "auth.uid"})
+}
+
+mutation UpdateUser($name: String) @auth(level: USER) {
+  user_update(key: {id_expr: "auth.uid"}, data: {name: $name})
+}
+
+mutation UpdateCart($id: UUID!, $qty: Int!) @auth(level: USER) {
+  cart_update(id: $id, data: {quantity: $qty})
+}
+
+mutation UpdateOrder($id: UUID!, $status: String!) @auth(level: USER) {
+  order_update(id: $id, data: {status: $status})
+}
+
+mutation UpdateProduct($id: UUID!, $price: Float) @auth(level: USER) {
+  product_update(id: $id, data: {price: $price})
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: {id_expr: "auth.uid"})
+}
+
+mutation DeleteCart($id: UUID!) @auth(level: USER) {
+  cart_delete(id: $id)
+}
+
+mutation DeleteOrder($id: UUID!) @auth(level: USER) {
+  order_delete(id: $id)
+}
+
+mutation DeleteOrderItem($id: UUID!) @auth(level: USER) {
+  orderItem_delete(id: $id)
+}
+
+mutation DeleteProduct($id: UUID!) @auth(level: USER) {
+  product_delete(id: $id)
+}
+
+query GetMyUser @auth(level: USER) {
+  user(key: {id_expr: "auth.uid"}) {
+    email
+    name
+    role
+  }
+}
+
+query GetCart($id: UUID!) @auth(level: USER) {
+  cart(id: $id) {
+    quantity
+    product { name }
+  }
+}
+
+query GetOrder($id: UUID!) @auth(level: USER) {
+  order(id: $id) {
+    totalAmount
+    status
+    orderItems_on_order {
+      product { name }
+      quantity
+    }
+  }
+}
+
+query ListProducts @auth(level: PUBLIC, insecureReason: "Products are public catalog items.") {
+  products {
+    name
+    price
+    imageUrl
+  }
+}
+
+query ListMyOrders @auth(level: USER) {
+  orders(where: {customerId: {eq_expr: "auth.uid"}}) {
+    id
+    totalAmount
+    createdAt
+  }
+}
