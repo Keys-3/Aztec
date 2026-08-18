@@ -7,16 +7,15 @@ interface ManageItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: any;
-  type: 'inventory' | 'shop';
   onSuccess: () => void;
   onDeleteInventoryItem: (productId: string, targetUserId: string) => Promise<void>;
   onRemoveFromSale: (productId: string, targetUserId: string) => Promise<void>;
   onListForSale: (product: any, quantity: number, price: number, targetUserId: string) => Promise<void>;
-  onUpdateListing?: (productId: string, newQuantity: number, newPrice: number, targetUserId: string) => Promise<void>;
+  onUpdateListing: (productId: string, newQuantity: number, newPrice: number, targetUserId: string) => Promise<void>;
 }
 
 const ManageItemModal: React.FC<ManageItemModalProps> = ({
-  isOpen, onClose, item, type, onSuccess,
+  isOpen, onClose, item, onSuccess,
   onDeleteInventoryItem, onRemoveFromSale, onListForSale, onUpdateListing
 }) => {
   const { user } = useAuth();
@@ -29,8 +28,8 @@ const ManageItemModal: React.FC<ManageItemModalProps> = ({
     quality: '',
   });
   
-  const [listQuantity, setListQuantity] = useState(1);
-  const [listPrice, setListPrice] = useState(0);
+  const [listQuantity, setListQuantity] = useState<number | ''>(1);
+  const [listPrice, setListPrice] = useState<number | ''>(0);
 
   useEffect(() => {
     if (item && item.product) {
@@ -40,10 +39,10 @@ const ManageItemModal: React.FC<ManageItemModalProps> = ({
         description: item.product.description || '',
         quality: item.product.quality || 'Premium',
       });
-      setListPrice(type === 'shop' ? item.price : item.product.price || 0);
-      setListQuantity(type === 'shop' ? item.quantity : 1);
+      setListPrice(item.isListed ? item.listedPrice : (item.product.price || 0));
+      setListQuantity(item.quantity || 1);
     }
-  }, [item, type]);
+  }, [item]);
 
   if (!isOpen || !item) return null;
 
@@ -67,16 +66,19 @@ const ManageItemModal: React.FC<ManageItemModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (type === 'inventory') {
-      await onDeleteInventoryItem(item.product.id, item.user_id);
-    } else {
-      await onRemoveFromSale(item.product_id, item.user_id);
+    await onDeleteInventoryItem(item.product.id, item.user_id);
+    if (item.isListed) {
+        await onRemoveFromSale(item.product.id, item.user_id);
     }
     onClose();
   };
 
   const handleList = async () => {
-    await onListForSale(item.product, listQuantity, listPrice, item.user_id);
+    if (item.isListed) {
+        await onRemoveFromSale(item.product.id, item.user_id);
+    } else {
+        await onListForSale(item.product, listQuantity, listPrice, item.user_id);
+    }
     onClose();
   };
 
@@ -138,58 +140,44 @@ const ManageItemModal: React.FC<ManageItemModalProps> = ({
 
           {/* Actions */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Stock & Market Listing</h3>
             
-            {type === 'inventory' && (
-              <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
-                <h4 className="text-sm font-medium text-emerald-400 mb-3">List on Marketplace</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Quantity (Max: {item.quantity})</label>
-                    <input type="number" min="1" max={item.quantity} value={listQuantity} onChange={(e) => setListQuantity(parseInt(e.target.value) || 1)} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Price per unit (₹)</label>
-                    <input type="number" min="0" step="0.01" value={listPrice} onChange={(e) => setListPrice(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
-                  </div>
-                  <button onClick={handleList} disabled={listQuantity <= 0 || listPrice <= 0 || listQuantity > item.quantity} className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-2">
-                    <ArrowRight className="h-4 w-4" />
-                    <span>List Item</span>
-                  </button>
+            <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Total Quantity in Inventory</label>
+                  <input type="number" min="1" value={listQuantity} onChange={(e) => setListQuantity(e.target.value === '' ? '' : parseInt(e.target.value))} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
                 </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Price per unit (₹)</label>
+                  <input type="number" min="0" step="0.01" value={listPrice} onChange={(e) => setListPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
+                </div>
+                <button onClick={async () => {
+                    await onUpdateListing(item.product.id, listQuantity === '' ? 1 : listQuantity, listPrice === '' ? 0 : listPrice, item.user_id);
+                    onClose();
+                }} disabled={listQuantity === '' || listQuantity <= 0 || listPrice === '' || listPrice <= 0} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2">
+                  <Save className="h-4 w-4" />
+                  <span>Update Stock & Price</span>
+                </button>
               </div>
-            )}
+            </div>
 
-            {type === 'shop' && (
-              <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
-                <h4 className="text-sm font-medium text-emerald-600 mb-3">Update Listing</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Quantity</label>
-                    <input type="number" min="1" value={listQuantity} onChange={(e) => setListQuantity(parseInt(e.target.value) || 1)} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Price per unit (₹)</label>
-                    <input type="number" min="0" step="0.01" value={listPrice} onChange={(e) => setListPrice(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900" />
-                  </div>
-                  <button onClick={async () => {
-                      if (onUpdateListing) {
-                          await onUpdateListing(item.product.id, listQuantity, listPrice, item.user_id);
-                          onClose();
-                      }
-                  }} className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center space-x-2">
-                    <Save className="h-4 w-4" />
-                    <span>Update Listing</span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
+                <h4 className="text-sm font-medium text-emerald-400 mb-3">Marketplace Visibility</h4>
+                <button onClick={handleList} className={`w-full text-white py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 ${item.isListed ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                    <ArrowRight className="h-4 w-4" />
+                    <span>{item.isListed ? 'Unlist from Market' : 'List on Marketplace'}</span>
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                    {item.isListed ? 'This item is visible to buyers.' : 'This item is hidden from buyers.'}
+                </p>
+            </div>
 
             <div className="bg-white p-4 rounded-xl border border-gray-200">
               <h4 className="text-sm font-medium text-red-400 mb-3">Danger Zone</h4>
               <button onClick={handleDelete} className="w-full bg-red-600/20 text-red-400 border border-red-600/30 py-2 rounded-lg hover:bg-red-600 hover:text-white transition-colors font-medium flex items-center justify-center space-x-2">
                 <Trash2 className="h-4 w-4" />
-                <span>{type === 'inventory' ? 'Delete from Inventory' : 'Unlist from Market'}</span>
+                <span>Permanently Delete Item</span>
               </button>
             </div>
             

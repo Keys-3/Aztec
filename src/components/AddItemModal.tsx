@@ -28,10 +28,11 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess 
   const [formData, setFormData] = useState({
     name: '',
     category: 'leafy-greens',
+    price: '' as number | '',
+    yield: '' as number | '',
+    unit: 'kg',
     description: '',
-    quality: 'Premium',
-    yield: 1,
-    price: 0,
+    quality: 'Premium'
   });
 
   if (!isOpen) return null;
@@ -41,6 +42,12 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess 
     if (!user) return;
     setLoading(true);
     setError(null);
+
+    if (formData.price === '' || formData.yield === '') {
+      setError('Please provide a valid price and yield quantity');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Determine image based on name or category
@@ -152,7 +159,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess 
                 step="0.01"
                 required
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
               />
             </div>
@@ -163,7 +170,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess 
                 min="1"
                 required
                 value={formData.yield}
-                onChange={(e) => setFormData({ ...formData, yield: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, yield: e.target.value === '' ? '' : parseInt(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
               />
             </div>

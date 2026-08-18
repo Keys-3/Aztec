@@ -13,8 +13,6 @@ const Inventory: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [modalType, setModalType] = useState<'inventory' | 'shop'>('inventory');
-  const [activeTab, setActiveTab] = useState<'stock' | 'listed'>('stock');
 
   useEffect(() => {
     if (user) {
@@ -40,7 +38,18 @@ const Inventory: React.FC = () => {
           getUserShopListings(user.id)
         ]);
       }
-      setUserInventory(inventory);
+      const enrichedInventory = inventory.map((invItem: any) => {
+        const matchingListing = shopListings.find((listing: any) => 
+          listing.product_id === invItem.product_id && listing.user_id === invItem.user_id
+        );
+        return {
+          ...invItem,
+          isListed: !!matchingListing,
+          listedPrice: matchingListing ? matchingListing.price : (invItem.product?.price || 0),
+        };
+      });
+
+      setUserInventory(enrichedInventory);
       setUserShopListings(shopListings);
     } catch (error: any) {
       console.error('Error loading inventory data:', error);
@@ -60,13 +69,8 @@ const Inventory: React.FC = () => {
     try {
       const success = await createShopListing(targetUserId, product.id, quantity, price);
       if (success) {
-        // Find current inventory quantity locally
-        const currentItem = userInventory.find(item => item.product_id === product.id && item.user_id === targetUserId);
-        const currentInventoryQty = currentItem ? currentItem.quantity : 0;
-        await updateInventoryQuantity(targetUserId, product.id, currentInventoryQty - quantity);
-        
         await loadData();
-        showMessage('success', `${quantity} ${product.name}(s) listed for sale!`);
+        showMessage('success', `Item listed for sale!`);
       } else {
         showMessage('error', 'Failed to list item for sale');
       }
@@ -79,15 +83,8 @@ const Inventory: React.FC = () => {
   const handleRemoveFromSale = async (productId: string, targetUserId: string) => {
     if (!user) return;
     try {
-      const listing = userShopListings.find(l => l.product_id === productId && l.user_id === targetUserId);
-      if (!listing) return;
-
       const success = await removeShopListing(targetUserId, productId);
       if (success) {
-        const currentItem = userInventory.find(item => item.product_id === productId && item.user_id === targetUserId);
-        const currentInventoryQty = currentItem ? currentItem.quantity : 0;
-        await updateInventoryQuantity(targetUserId, productId, currentInventoryQty + listing.quantity);
-        
         await loadData();
         showMessage('success', 'Item removed from sale');
       } else {
@@ -103,30 +100,15 @@ const Inventory: React.FC = () => {
     if (!user) return;
     try {
       const listing = userShopListings.find(l => l.product_id === productId && l.user_id === targetUserId);
-      if (!listing) return;
-
-      const currentInventoryItem = userInventory.find(item => item.product_id === productId && item.user_id === targetUserId);
-      const inventoryQty = currentInventoryItem ? currentInventoryItem.quantity : 0;
-      
-      const qtyDifference = newQuantity - listing.quantity;
-      
-      if (qtyDifference > 0 && qtyDifference > inventoryQty) {
-        showMessage('error', 'Not enough inventory to increase listing quantity');
-        return;
+      if (listing) {
+        await updateShopListing(targetUserId, productId, { quantity: newQuantity, price: newPrice });
       }
+      await updateInventoryQuantity(targetUserId, productId, newQuantity);
       
-      const success = await updateShopListing(targetUserId, productId, { quantity: newQuantity, price: newPrice });
-      if (success) {
-        if (qtyDifference !== 0) {
-          await updateInventoryQuantity(targetUserId, productId, inventoryQty - qtyDifference);
-        }
-        await loadData();
-        showMessage('success', 'Listing updated successfully!');
-      } else {
-        showMessage('error', 'Failed to update listing');
-      }
+      await loadData();
+      showMessage('success', 'Item updated successfully!');
     } catch (error: any) {
-      console.error('Error updating listing:', error);
+      console.error('Error updating item:', error);
       showMessage('error', `Error: ${error.message}`);
     }
   };
@@ -203,33 +185,12 @@ const Inventory: React.FC = () => {
           </div>
         )}
 
-        <div className="flex space-x-8 mb-8 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('stock')}
-            className={`pb-4 px-2 font-medium text-lg transition-colors relative ${
-              activeTab === 'stock'
-                ? 'text-emerald-600 border-b-2 border-emerald-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Available Stock
-          </button>
-          <button
-            onClick={() => setActiveTab('listed')}
-            className={`pb-4 px-2 font-medium text-lg transition-colors relative ${
-              activeTab === 'listed'
-                ? 'text-emerald-600 border-b-2 border-emerald-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Active Market Listings
-          </button>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-800">All Items</h2>
         </div>
 
         <div>
-          {/* Inventory Items */}
-          {activeTab === 'stock' && (
-            <section>
+          <section>
             {userInventory.length === 0 ? (
               <div className="bg-white backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-200">
                 <Package className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -239,18 +200,25 @@ const Inventory: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userInventory.map((item) => {
-                  if (!item.product) return null; // Skip if product couldn't be loaded
+                  if (!item.product) return null;
                   
                   return (
                     <div 
                       key={item.id} 
                       onClick={() => {
                         setSelectedItem(item);
-                        setModalType('inventory');
                       }}
-                      className="bg-white backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-emerald-500/50 transition-colors group"
+                      className="bg-white backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-emerald-500/50 transition-colors group relative"
                     >
                       <img src={item.product?.image_url} alt={item.product?.name} className="w-full h-40 object-cover group-hover:opacity-80 transition-opacity" />
+                      
+                      {item.isListed && (
+                        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center shadow-md">
+                          <ShoppingCart className="w-3 h-3 mr-1" />
+                          Listed
+                        </div>
+                      )}
+
                       <div className="p-5">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-semibold text-gray-900 group-hover:text-emerald-400 transition-colors">{item.product?.name}</h3>
@@ -258,8 +226,13 @@ const Inventory: React.FC = () => {
                         {user?.role === 'admin' && item.user_profiles && (
                           <p className="text-sm text-gray-600 mb-1">Farmer: {item.user_profiles.username}</p>
                         )}
-                        <p className="text-emerald-400 font-medium mb-4">{item.quantity} units available</p>
-                        <button className="w-full bg-white text-white py-2 rounded-lg group-hover:bg-emerald-600 transition-colors font-medium">
+                        <p className="text-emerald-400 font-medium mb-1">{item.quantity} units total</p>
+                        {item.isListed && (
+                          <p className="text-gray-500 text-sm mb-4">Price: ₹{item.listedPrice}</p>
+                        )}
+                        {!item.isListed && <div className="mb-4"></div>}
+                        
+                        <button className="w-full bg-white text-emerald-600 border border-emerald-600 py-2 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors font-medium">
                           Manage Item
                         </button>
                       </div>
@@ -269,56 +242,6 @@ const Inventory: React.FC = () => {
               </div>
             )}
           </section>
-          )}
-
-          {/* Active Listings */}
-          {activeTab === 'listed' && (
-            <section>
-            {userShopListings.length === 0 ? (
-              <div className="bg-white backdrop-blur-sm rounded-2xl shadow-2xl p-12 text-center border border-gray-200">
-                <ShoppingCart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No Active Listings</h3>
-                <p className="text-gray-600">Items you list for sale will appear here.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userShopListings.map((listing) => {
-                  if (!listing.product) return null; // Skip if product couldn't be loaded
-                  return (
-                  <div 
-                    key={listing.id} 
-                    onClick={() => {
-                      setSelectedItem(listing);
-                      setModalType('shop');
-                    }}
-                    className="bg-white backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-emerald-500/50 transition-colors group"
-                  >
-                    <img src={listing.product?.image_url} alt={listing.product?.name} className="w-full h-32 object-cover group-hover:opacity-80 transition-opacity" />
-                    <div className="p-5">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-emerald-400 transition-colors">{listing.product?.name}</h3>
-                      {user?.role === 'admin' && listing.user_profiles && (
-                        <p className="text-sm text-gray-600 mb-4">Farmer: {listing.user_profiles.username}</p>
-                      )}
-                      <div className="space-y-2 mb-6">
-                        <div className="flex justify-between text-sm text-gray-700">
-                          <span>Listed Quantity:</span>
-                          <span className="text-gray-900 font-medium">{listing.quantity} units</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-700">
-                          <span>Unit Price:</span>
-                          <span className="text-emerald-400 font-semibold">₹{listing.price}</span>
-                        </div>
-                      </div>
-                      <button className="w-full bg-white text-white py-2 rounded-lg group-hover:bg-emerald-600 transition-colors font-medium">
-                        Manage Listing
-                      </button>
-                    </div>
-                  </div>
-                )})}
-              </div>
-            )}
-          </section>
-          )}
         </div>
 
         <AddItemModal
@@ -334,7 +257,6 @@ const Inventory: React.FC = () => {
           isOpen={!!selectedItem}
           onClose={() => setSelectedItem(null)}
           item={selectedItem}
-          type={modalType}
           onSuccess={() => {
             loadData();
             setSelectedItem(null);

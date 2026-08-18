@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Minus, Plus, Trash2, ShoppingBag, ShoppingCart, CreditCard, MapPin, Package, ClipboardList } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,22 @@ const CartPage: React.FC = () => {
     postal_code: '',
     country: 'India'
   });
+
+  useEffect(() => {
+    if (user) {
+      setShippingDetails(prev => ({
+        ...prev,
+        full_name: prev.full_name || user.username || '',
+        phone: prev.phone || user.contact || '',
+        address_line_1: prev.address_line_1 || user.address_line_1 || '',
+        address_line_2: prev.address_line_2 || user.address_line_2 || '',
+        city: prev.city || user.city || '',
+        state: prev.state || user.state || '',
+        postal_code: prev.postal_code || user.postal_code || '',
+        country: prev.country || user.country || 'India'
+      }));
+    }
+  }, [user]);
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -55,11 +71,18 @@ const CartPage: React.FC = () => {
     setIsCheckingOut(true);
 
     try {
-      // Create order
+      const grandTotal = total + 50;
+      let paymentStatus = 'pending';
+      let razorpayPaymentId = null;
+
+      // Create order in Firestore
       const orderRef = await addDoc(collection(db, 'orders'), {
         user_id: user.id,
-        total_amount: total + 50, // Including delivery charges
+        total_amount: grandTotal,
         status: 'pending',
+        payment_method: 'cod',
+        payment_status: paymentStatus,
+        razorpay_payment_id: razorpayPaymentId,
         shipping_address: shippingDetails,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -100,9 +123,13 @@ const CartPage: React.FC = () => {
         country: 'India'
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error placing order:', err);
-      setError('Failed to place order. Please try again.');
+      if (err.message === 'Payment cancelled') {
+        setError('Payment was cancelled. You can try again.');
+      } else {
+        setError('Failed to place order. Please try again.');
+      }
     } finally {
       setIsCheckingOut(false);
     }
@@ -364,6 +391,7 @@ const CartPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
 
                   {error && (
                     <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-start space-x-2">

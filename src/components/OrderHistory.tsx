@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Package, Calendar, MapPin, Eye, Truck, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db, Order, OrderItem, updateOrderStatus } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 
 interface OrderHistoryProps {
   isOpen: boolean;
@@ -121,6 +121,26 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ isOpen, onClose, isModal = 
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm('Are you sure you want to remove this order from your history?')) return;
+    
+    setUpdatingId(orderId);
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      
+      // Update local state
+      setOrders(orders.filter(o => o.id !== orderId));
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to remove order from history');
     } finally {
       setUpdatingId(null);
     }
@@ -268,9 +288,19 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ isOpen, onClose, isModal = 
                           Return Order
                         </button>
                       )}
+                      {(selectedOrder.status === 'cancelled' || selectedOrder.status === 'returned') && (
+                        <button 
+                          onClick={() => handleDeleteOrder(selectedOrder.id)}
+                          disabled={updatingId === selectedOrder.id}
+                          className="w-full bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>Delete from History</span>
+                        </button>
+                      )}
                       
                       {/* Admin Controls */}
-                      {user?.role === 'admin' && (
+                      {user?.role === 'admin' && !['cancelled', 'returned'].includes(selectedOrder.status) && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
                           <p className="text-xs font-bold text-purple-600 uppercase mb-3">Admin Controls</p>
                           <div className="grid grid-cols-2 gap-2">

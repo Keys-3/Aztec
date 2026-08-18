@@ -451,6 +451,32 @@ export const processOrderQuantities = async (items: { product_id: string, quanti
           quantity: newQty,
           updated_at: new Date().toISOString()
         });
+
+        // Sync user_inventory as well
+        const userId = listingData.user_id;
+        if (userId) {
+          const invId = `${userId}_${item.product_id}`;
+          const invRef = doc(db, 'user_inventory', invId);
+          const invSnap = await getDoc(invRef);
+          if (invSnap.exists()) {
+             const currentInvQty = invSnap.data().quantity || 0;
+             await updateDoc(invRef, {
+                quantity: Math.max(0, currentInvQty - item.quantity),
+                updated_at: new Date().toISOString()
+             });
+          }
+        }
+      }
+
+      // Also update the global product stock
+      const productRef = doc(db, 'products', item.product_id);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        const currentStock = productSnap.data().stock || 0;
+        await updateDoc(productRef, {
+          stock: Math.max(0, currentStock - item.quantity),
+          updated_at: new Date().toISOString()
+        });
       }
     }
   } catch (error) {
@@ -496,6 +522,17 @@ export const restoreOrderQuantities = async (orderId: string): Promise<void> => 
              });
           }
         }
+      }
+
+      // 3. Restore global product stock
+      const productRef = doc(db, 'products', productId);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        const currentStock = productSnap.data().stock || 0;
+        await updateDoc(productRef, {
+          stock: currentStock + quantityToRestore,
+          updated_at: new Date().toISOString()
+        });
       }
     }
   } catch (error) {

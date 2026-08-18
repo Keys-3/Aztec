@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CreditCard, MapPin, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db, processOrderQuantities } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,7 +14,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [shippingDetails, setShippingDetails] = useState({
     full_name: '',
     phone: '',
@@ -27,13 +26,33 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
     country: 'India'
   });
 
+  useEffect(() => {
+    if (user) {
+      setShippingDetails(prev => ({
+        ...prev,
+        full_name: prev.full_name || user.username || '',
+        phone: prev.phone || user.contact || '',
+        address_line_1: prev.address_line_1 || user.address_line_1 || '',
+        address_line_2: prev.address_line_2 || user.address_line_2 || '',
+        city: prev.city || user.city || '',
+        state: prev.state || user.state || '',
+        postal_code: prev.postal_code || user.postal_code || '',
+        country: prev.country || user.country || 'India'
+      }));
+    }
+  }, [user]);
+
   if (!isOpen || !product) return null;
 
-  const total = product.price * quantity;
+  const total = product.price * (quantity === '' ? 1 : quantity);
   const grandTotal = total + 50; // Including delivery charges
 
   const handleCheckout = async () => {
     if (!user) return;
+    if (quantity === '' || quantity <= 0) {
+      setError('Please enter a valid quantity');
+      return;
+    }
 
     // Validate shipping details
     const requiredFields = ['full_name', 'phone', 'address_line_1', 'city', 'state', 'postal_code'];
@@ -48,11 +67,17 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
     setIsCheckingOut(true);
 
     try {
+      let paymentStatus = 'pending';
+      let razorpayPaymentId = null;
+
       // Create order
       const orderRef = await addDoc(collection(db, 'orders'), {
         user_id: user.id,
         total_amount: grandTotal,
         status: 'pending',
+        payment_method: 'cod',
+        payment_status: paymentStatus,
+        razorpay_payment_id: razorpayPaymentId,
         shipping_address: shippingDetails,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -62,7 +87,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
       await addDoc(collection(db, 'order_items'), {
         order_id: orderRef.id,
         product_id: product.id,
-        quantity: quantity,
+        quantity: quantity === '' ? 1 : quantity,
         price: product.price,
         created_at: new Date().toISOString()
       });
@@ -70,13 +95,17 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
       // Process quantity reductions
       await processOrderQuantities([{
         product_id: product.id,
-        quantity: quantity
+        quantity: quantity === '' ? 1 : quantity
       }]);
 
       setOrderPlaced(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error placing order:', err);
-      setError('Failed to place order. Please try again.');
+      if (err.message === 'Payment cancelled') {
+        setError('Payment was cancelled. You can try again.');
+      } else {
+        setError('Failed to place order. Please try again.');
+      }
     } finally {
       setIsCheckingOut(false);
     }
@@ -140,7 +169,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
                     type="number" 
                     min="1" 
                     value={quantity} 
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) => setQuantity(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value)))}
                     className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
                   />
                 </div>
@@ -246,6 +275,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
               </div>
             </div>
 
+
             {error && (
               <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-start space-x-2">
                 <span className="font-medium">{error}</span>
@@ -265,7 +295,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, product 
               ) : (
                 <>
                   <CreditCard className="h-5 w-5" />
-                  <span>Pay ₹{grandTotal.toFixed(2)}</span>
+                  <span>Place Order - ₹{grandTotal.toFixed(2)}</span>
                 </>
               )}
             </button>

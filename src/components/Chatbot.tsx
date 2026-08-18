@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { MessageCircle, Send, X, Bot, User, Lightbulb, Droplets, Thermometer, Leaf } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Message {
   id: string;
@@ -66,53 +65,36 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose }) => {
     setIsTyping(true);
 
     try {
-      const apiKey = import.meta.env.VITE_PUBLIC_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || 'AQ.Ab8RN6IWf1ctG8NZF5VZPad0QiXUmI3YBiThgKnjEPuaUrozfA';
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        systemInstruction: {
-          role: "system",
-          parts: [{ text: "You are an AI assistant for a hydroponic farming application called Aztec. You should be helpful, friendly, and knowledgeable about hydroponics, farming, crop management, and general topics. Answer general questions as well, but always be ready to help with farm-related queries." }]
-        }
-      });
-      
-      const formattedHistory = messages.slice(1).map(m => ({
-        role: m.isBot ? "model" : "user",
-        parts: [{ text: m.text }]
-      }));
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const chat = model.startChat({
-        history: formattedHistory
-      });
+      const lowercaseText = text.toLowerCase();
+      let response = "I'm sorry, I don't understand. Could you please rephrase your question?";
+      let suggestions: string[] = [];
 
-      const result = await chat.sendMessage(text.trim());
-      const responseText = result.response.text();
-      
+      if (lowercaseText.includes('hello') || lowercaseText.includes('hi')) {
+        response = "Hello! How can I help you with your hydroponic system today?";
+      } else if (lowercaseText.includes('nutrient') || lowercaseText.includes('ph')) {
+        response = "For optimal growth, maintain a pH between 5.5 and 6.5. Monitor EC levels daily to ensure your plants are getting enough nutrients.";
+        suggestions = ["How to measure EC?", "Best pH for lettuce?"];
+      } else if (lowercaseText.includes('yellow') || lowercaseText.includes('wilting')) {
+        response = "Yellowing or wilting leaves can indicate nutrient deficiency, root rot, or improper pH. Check your water temperature and oxygenation levels.";
+        suggestions = ["How to fix root rot?", "Ideal water temperature?"];
+      } else if (lowercaseText.includes('yield') || lowercaseText.includes('grow')) {
+        response = "To maximize yield, ensure proper lighting cycles (usually 14-16 hours for most plants), maintain optimal temperature and humidity, and keep your nutrient solution balanced.";
+      }
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: responseText,
+        text: response,
         isBot: true,
         timestamp: new Date(),
-        suggestions: []
+        suggestions: suggestions.length > 0 ? suggestions : defaultSuggestions
       };
 
       setMessages(prev => [...prev, botMessage]);
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      let errorMessage = 'Network error connecting to the AI.';
-      if (error.message && error.message.includes('404')) {
-        errorMessage = "Error: This API Key does not have the Generative Language API enabled, or the model was not found.";
-      } else if (error.message && error.message.includes('400')) {
-        errorMessage = "Error: API key is invalid or badly formatted.";
-      }
-
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        text: errorMessage,
-        isBot: true,
-        timestamp: new Date(),
-        suggestions: defaultSuggestions
-      }]);
+    } catch (error) {
+      console.error('Error generating response:', error);
     } finally {
       setIsTyping(false);
     }

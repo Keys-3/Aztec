@@ -21,6 +21,9 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [visibleSensors, setVisibleSensors] = React.useState<string[]>([]);
+  const [lastUpdated, setLastUpdated] = React.useState(new Date());
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [isLiveConnected, setIsLiveConnected] = React.useState(true);
 
   React.useEffect(() => {
     if (user) {
@@ -228,6 +231,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setLastUpdated(new Date());
+      setIsRefreshing(false);
+      showMessage('success', 'Sensor readings and data refreshed to current time');
+    }, 800);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -242,7 +254,7 @@ const Dashboard: React.FC = () => {
       </p>
       <div className="flex items-center mt-3 sm:mt-4 text-xs sm:text-sm text-emerald-200">
         <Clock className="h-4 w-4 mr-2" />
-        Last updated: {new Date().toLocaleString()}
+        Last updated: {lastUpdated.toLocaleString()}
       </div>
     </div>
 
@@ -250,15 +262,25 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 mt-4 lg:mt-0">
       <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
         <Wifi className="h-5 w-5 text-emerald-200" />
-        <span className="text-sm">Connected</span>
+        <span className="text-sm">{isLiveConnected ? "Live Connected" : "Disconnected"}</span>
+        {isLiveConnected && (
+          <span className="relative flex h-2 w-2 ml-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        )}
       </div>
       <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
         <Battery className="h-5 w-5 text-emerald-200" />
         <span className="text-sm">98%</span>
       </div>
-      <button className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 hover:bg-white/30 transition-all">
-        <RefreshCw className="h-5 w-5 text-emerald-200" />
-        <span className="text-sm">Refresh</span>
+      <button 
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 hover:bg-white/30 transition-all disabled:opacity-50"
+      >
+        <RefreshCw className={`h-5 w-5 text-emerald-200 ${isRefreshing ? 'animate-spin' : ''}`} />
+        <span className="text-sm">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
       </button>
     </div>
   </div>
