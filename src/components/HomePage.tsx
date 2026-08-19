@@ -241,7 +241,10 @@ const HomePage: React.FC = () => {
               Join the future of agriculture where technology meets
               sustainability.
             </p>
-            <button className="bg-white text-emerald-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transform hover:scale-105 transition-all duration-200">
+            <button 
+              onClick={() => window.open('https://en.wikipedia.org/wiki/Nutrient_film_technique', '_blank', 'noopener,noreferrer')}
+              className="bg-white text-emerald-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transform hover:scale-105 transition-all duration-200"
+            >
               Explore NFT Features
             </button>
           </div>

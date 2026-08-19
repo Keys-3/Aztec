@@ -5,7 +5,12 @@ import { getUserInventory, getUserShopListings, updateInventoryQuantity, createS
 import AddItemModal from './AddItemModal';
 import ManageItemModal from './ManageItemModal';
 
-const Inventory: React.FC = () => {
+
+interface InventoryProps {
+  onNavigate?: (page: string) => void;
+}
+
+const Inventory: React.FC<InventoryProps> = ({ onNavigate }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userInventory, setUserInventory] = useState<any[]>([]);
@@ -15,19 +20,28 @@ const Inventory: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
-      loadData();
-    } else {
-      setLoading(false);
-    }
+    loadData();
   }, [user]);
 
   const loadData = async () => {
-    if (!user) return;
     setLoading(true);
     try {
       let inventory, shopListings;
-      if (user.role === 'admin') {
+      if (!user) {
+        const allShop = await getAllShopListings();
+        // Use shop listings as a mock inventory preview for non-logged in users
+        inventory = allShop.slice(0, 3).map(listing => ({
+          id: `preview_${listing.id}`,
+          user_id: listing.user_id,
+          product_id: listing.product_id,
+          quantity: listing.quantity,
+          created_at: listing.created_at,
+          updated_at: listing.updated_at,
+          product: listing.product,
+          user_profiles: listing.user_profiles
+        }));
+        shopListings = allShop;
+      } else if (user.role === 'admin') {
         [inventory, shopListings] = await Promise.all([
           getAllUserInventory(),
           getAllShopListings()
@@ -38,6 +52,7 @@ const Inventory: React.FC = () => {
           getUserShopListings(user.id)
         ]);
       }
+      
       const enrichedInventory = inventory.map((invItem: any) => {
         const matchingListing = shopListings.find((listing: any) => 
           listing.product_id === invItem.product_id && listing.user_id === invItem.user_id
@@ -53,7 +68,11 @@ const Inventory: React.FC = () => {
       setUserShopListings(shopListings);
     } catch (error: any) {
       console.error('Error loading inventory data:', error);
-      showMessage('error', `Failed to load data: ${error.message || 'Check console for details'}`);
+      if (!user) {
+        showMessage('error', 'Please log in to view items');
+      } else {
+        showMessage('error', `Failed to load data: ${error.message || 'Check console for details'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -130,19 +149,7 @@ const Inventory: React.FC = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center py-20">
-          <div className="text-center">
-            <Package className="h-20 w-20 text-gray-600 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h2>
-            <p className="text-gray-600">Please sign in to view your inventory</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   if (loading) {
     return (
@@ -166,7 +173,13 @@ const Inventory: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => setIsAddItemModalOpen(true)}
+            onClick={() => {
+              if (!user) {
+                if (onNavigate) onNavigate('login');
+                return;
+              }
+              setIsAddItemModalOpen(true);
+            }}
             className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center space-x-2"
           >
             <Plus className="h-5 w-5" />
@@ -232,7 +245,16 @@ const Inventory: React.FC = () => {
                         )}
                         {!item.isListed && <div className="mb-4"></div>}
                         
-                        <button className="w-full bg-white text-emerald-600 border border-emerald-600 py-2 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors font-medium">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!user) {
+                              if (onNavigate) onNavigate('login');
+                              return;
+                            }
+                            setSelectedItem(item);
+                          }}
+                          className="w-full bg-white text-emerald-600 border border-emerald-600 py-2 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors font-medium">
                           Manage Item
                         </button>
                       </div>
@@ -267,6 +289,8 @@ const Inventory: React.FC = () => {
           onListForSale={handleListForSale}
           onUpdateListing={handleUpdateListing}
         />
+        
+
       </div>
     </div>
   );

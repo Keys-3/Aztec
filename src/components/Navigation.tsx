@@ -3,7 +3,6 @@ import { Home, ShoppingBag, ShoppingCart, BarChart3, Phone, Menu, X, Package } f
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import UserProfile from './UserProfile';
-import AuthModal from './AuthModal';
 import logo from "../assets/logo.png";
 
 interface NavigationProps {
@@ -13,16 +12,15 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const { user, loading } = useAuth();
   const { itemCount } = useCart();
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home },
-    ...(user?.role === 'farmer' || user?.role === 'admin' ? [{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 }] : []),
-    ...(user?.role === 'farmer' || user?.role === 'admin' ? [{ id: 'inventory', label: 'Inventory', icon: Package }] : []),
-    ...(user?.role === 'customer' || user?.role === 'admin' ? [{ id: 'marketplace', label: 'Marketplace', icon: ShoppingBag }] : []),
-    ...(user?.role === 'customer' || user?.role === 'admin' ? [{ id: 'cart', label: 'Cart', icon: ShoppingCart }] : []),
+    ...( (!user || user?.role === 'farmer' || user?.role === 'admin') ? [{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 }] : []),
+    ...( (!user || user?.role === 'farmer' || user?.role === 'admin') ? [{ id: 'inventory', label: 'Inventory', icon: Package }] : []),
+    ...( (!user || user?.role === 'customer' || user?.role === 'admin') ? [{ id: 'marketplace', label: 'Marketplace', icon: ShoppingBag }] : []),
+    ...( (!user || user?.role === 'customer' || user?.role === 'admin') ? [{ id: 'cart', label: 'Cart', icon: ShoppingCart }] : []),
     { id: 'contact', label: 'Contact', icon: Phone },
   ];
 
@@ -68,7 +66,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
                 <UserProfile />
               ) : (
                 <button
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => onPageChange('login')}
                   className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
                 >
                   Sign In
@@ -102,7 +100,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
               ) : (
                 <button
                   onClick={() => {
-                    setIsAuthModalOpen(true);
+                    onPageChange('login');
                     setIsMobileMenuOpen(false);
                   }}
                   className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
@@ -136,12 +134,6 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
             ))}
           </div>
         )}
-        
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-        />
       </div>
     </nav>
   );

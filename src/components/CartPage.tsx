@@ -4,13 +4,16 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db, processOrderQuantities } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import AuthModal from './AuthModal';
+
 import OrderHistory from './OrderHistory';
 
-const CartPage: React.FC = () => {
+interface CartPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
   const { items, total, updateQuantity, removeFromCart, clearCart } = useCart();
   const { user } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'cart' | 'history'>('cart');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -52,7 +55,7 @@ const CartPage: React.FC = () => {
 
   const handleCheckout = async () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      if (onNavigate) onNavigate('login');
       return;
     }
 
@@ -423,11 +426,7 @@ const CartPage: React.FC = () => {
           </>
         )}
         
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-        />
+
       </div>
     </div>
   );

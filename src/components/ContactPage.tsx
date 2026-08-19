@@ -41,26 +41,14 @@ const ContactPage: React.FC = () => {
 
   const teamMembers = [
     {
-      name: 'Avnishka Bhardwaj',
-      role: 'Team Manager',
-      image: profile,
-      bio: '3rd Year B.Tech (C.S.E) student.'
-    },
-    {
       name: 'Samarth Sharma',
-      role: 'Head of Engineering',
+      role: 'AI&ML Engineer',
       image: profile,
       bio: '3rd Year B.Tech (C.S.E) student..'
     },
     {
-      name: 'Parth Garg',
-      role: 'Hardware Developer',
-      image: profile,
-      bio: '3rd Year B.Tech (C.S.E) student.'
-    },
-    {
       name: 'Prithvi Singh',
-      role: 'Software Developer',
+      role: 'Software Engineer',
       image: profile,
       bio: '3rd Year B.Tech (C.S.E) student.'
     }
@@ -97,7 +85,7 @@ const ContactPage: React.FC = () => {
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">Get in Touch</h1>
             <p className="text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed">
-              Have questions about our hydroponic systems? Want to learn more about sustainable farming? 
+              Have questions about our hydroponic systems? Want to learn more about sustainable farming?
               Our team of experts is here to help you grow better, smarter, and more efficiently.
             </p>
           </div>
@@ -111,7 +99,7 @@ const ContactPage: React.FC = () => {
             {/* Contact Form */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Send us a Message</h2>
-              
+
               {isSubmitted ? (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-8 text-center">
                   <CheckCircle className="h-16 w-16 text-emerald-600 mx-auto mb-4" />
@@ -135,7 +123,7 @@ const ContactPage: React.FC = () => {
                         type="text"
                         id="name"
                         value={contactForm.name}
-                        onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                        onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                         placeholder="Your full name"
                         required
@@ -149,14 +137,14 @@ const ContactPage: React.FC = () => {
                         type="email"
                         id="email"
                         value={contactForm.email}
-                        onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                        onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                         placeholder="your.email@example.com"
                         required
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
@@ -165,7 +153,7 @@ const ContactPage: React.FC = () => {
                       <select
                         id="type"
                         value={contactForm.type}
-                        onChange={(e) => setContactForm({...contactForm, type: e.target.value})}
+                        onChange={(e) => setContactForm({ ...contactForm, type: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                       >
                         <option value="general">General Inquiry</option>
@@ -182,14 +170,14 @@ const ContactPage: React.FC = () => {
                         type="text"
                         id="subject"
                         value={contactForm.subject}
-                        onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                        onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                         placeholder="Brief subject line"
                         required
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
                       Message *
@@ -197,14 +185,14 @@ const ContactPage: React.FC = () => {
                     <textarea
                       id="message"
                       value={contactForm.message}
-                      onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                      onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                       rows={6}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none"
                       placeholder="Tell us about your project, questions, or how we can help you..."
                       required
                     />
                   </div>
-                  
+
                   <button
                     type="submit"
                     className="w-full bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2"
@@ -219,7 +207,7 @@ const ContactPage: React.FC = () => {
             {/* Contact Details */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Contact Information</h2>
-              
+
               <div className="space-y-8">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -231,7 +219,7 @@ const ContactPage: React.FC = () => {
                     <p className="text-sm text-gray-500">Monday - Friday: 8:00 AM - 6:00 PM PST</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Mail className="h-6 w-6 text-blue-600" />
@@ -244,7 +232,7 @@ const ContactPage: React.FC = () => {
                     <p className="text-sm text-gray-500">We respond within 24 hours</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <MapPin className="h-6 w-6 text-amber-600" />
@@ -259,7 +247,7 @@ const ContactPage: React.FC = () => {
                     <p className="text-sm text-gray-500">Visit by appointment only</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Clock className="h-6 w-6 text-purple-600" />
@@ -285,7 +273,7 @@ const ContactPage: React.FC = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">About Aztec Hydroponics</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Founded in 2025, we're pioneering the future of sustainable agriculture through innovative 
+              Founded in 2025, we're pioneering the future of sustainable agriculture through innovative
               hydroponic technology that empowers farmers to grow more with less.
             </p>
           </div>
@@ -294,13 +282,13 @@ const ContactPage: React.FC = () => {
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Our Mission</h3>
               <p className="text-gray-600 leading-relaxed mb-6">
-                At Aztec Hydroponics, we believe that the future of food production lies in sustainable, 
-                efficient, and technology-driven farming methods. Our mission is to make advanced hydroponic 
+                At Aztec Hydroponics, we believe that the future of food production lies in sustainable,
+                efficient, and technology-driven farming methods. Our mission is to make advanced hydroponic
                 systems accessible to farmers of all sizes, from urban gardeners to commercial operations.
               </p>
               <p className="text-gray-600 leading-relaxed mb-6">
-                We're committed to reducing water waste, maximizing crop yields, and helping our customers 
-                build profitable, sustainable farming businesses that can feed the world while protecting 
+                We're committed to reducing water waste, maximizing crop yields, and helping our customers
+                build profitable, sustainable farming businesses that can feed the world while protecting
                 our planet's precious resources.
               </p>
               <div className="grid grid-cols-2 gap-6">
@@ -314,7 +302,7 @@ const ContactPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative">
               <img src={photo}
                 alt="ponic system"
@@ -349,8 +337,8 @@ const ContactPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {teamMembers.map((member, index) => (
                 <div key={index} className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                  <img 
-                    src={member.image} 
+                  <img
+                    src={member.image}
                     alt={member.name}
                     className="w-20 h-20 rounded-full object-cover mx-auto mb-4"
                   />

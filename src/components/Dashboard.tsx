@@ -2,7 +2,7 @@ import React from 'react';
 import { Thermometer, Droplets, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Clock, Wifi, Battery, Settings, RefreshCw, Eye, BarChart, ShoppingCart, MessageCircle, Sun, Wind } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import AuthModal from './AuthModal';
+
 import Chatbot from './Chatbot';
 import { createProduct, addInventoryQuantity } from '../lib/firebase';
 import SensorDetailsModal from './SensorDetailsModal';
@@ -10,8 +10,11 @@ import AnalyticsModal from './AnalyticsModal';
 import ManagePlantsModal from './ManagePlantsModal';
 import HarvestModal from './HarvestModal';
 
-const Dashboard: React.FC = () => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+interface DashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [isChatbotOpen, setIsChatbotOpen] = React.useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = React.useState(false);
   const [isManagePlantsOpen, setIsManagePlantsOpen] = React.useState(false);
@@ -54,7 +57,7 @@ const Dashboard: React.FC = () => {
 
   const handleHarvestClick = (plantName: string) => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      if (onNavigate) onNavigate('login');
       return;
     }
     setHarvestingPlant(plantName);
@@ -275,7 +278,13 @@ const Dashboard: React.FC = () => {
         <span className="text-sm">98%</span>
       </div>
       <button 
-        onClick={handleRefresh}
+        onClick={() => {
+          if (!user) {
+            if (onNavigate) onNavigate('login');
+            return;
+          }
+          handleRefresh();
+        }}
         disabled={isRefreshing}
         className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 hover:bg-white/30 transition-all disabled:opacity-50"
       >
@@ -314,11 +323,23 @@ const Dashboard: React.FC = () => {
 
   {/* Buttons */}
   <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-    <button onClick={() => setIsAnalyticsOpen(true)} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+    <button onClick={() => {
+      if (!user) {
+        if (onNavigate) onNavigate('login');
+        return;
+      }
+      setIsAnalyticsOpen(true);
+    }} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
       <Eye className="h-4 w-4" />
       <span>View Details</span>
     </button>
-    <button onClick={() => setIsAnalyticsOpen(true)} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
+    <button onClick={() => {
+      if (!user) {
+        if (onNavigate) onNavigate('login');
+        return;
+      }
+      setIsAnalyticsOpen(true);
+    }} className="flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-all text-sm sm:text-base">
       <BarChart className="h-4 w-4" />
       <span>Analytics</span>
     </button>
@@ -341,7 +362,13 @@ const Dashboard: React.FC = () => {
               return (
                 <div 
                   key={sensor.id} 
-                  onClick={() => setSelectedSensor(sensor)}
+                  onClick={() => {
+                    if (!user) {
+                      if (onNavigate) onNavigate('login');
+                      return;
+                    }
+                    setSelectedSensor(sensor);
+                  }}
                   className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
                 >
                   <div className="flex items-center justify-between mb-4">
@@ -385,7 +412,13 @@ const Dashboard: React.FC = () => {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Plant Health & Growth</h2>
-            <button onClick={() => setIsManagePlantsOpen(true)} className="flex items-center space-x-2 bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition-all">
+            <button onClick={() => {
+              if (!user) {
+                if (onNavigate) onNavigate('login');
+                return;
+              }
+              setIsManagePlantsOpen(true);
+            }} className="flex items-center space-x-2 bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition-all">
               <Settings className="h-4 w-4" />
               <span className="text-sm">Manage Plants</span>
             </button>
@@ -535,11 +568,7 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
         
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-        />
+
         
         <Chatbot 
           isOpen={isChatbotOpen} 

@@ -3,7 +3,7 @@ import { Plus, Minus, ShoppingCart, Package, Star, Filter, Search, Eye, Edit, Tr
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { getUserInventory, getUserShopListings, updateInventoryQuantity, createShopListing, removeShopListing, updateShopListingQuantity, getAllShopListings } from '../lib/firebase';
-import AuthModal from './AuthModal';
+
 import CheckoutModal from './CheckoutModal';
 
 interface MarketplaceProps {
@@ -13,7 +13,7 @@ interface MarketplaceProps {
 const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
   const { user } = useAuth();
   const { addToCart, loadUserData, getInventoryQuantity, getShopQuantity } = useCart();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [allShopListings, setAllShopListings] = useState<any[]>([]);
   const [userInventory, setUserInventory] = useState<any[]>([]);
@@ -25,33 +25,36 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
 
   // Load data on component mount and when user changes
   useEffect(() => {
-    if (user) {
-      loadAllData();
-    } else {
-      setLoading(false);
-    }
+    loadAllData();
   }, [user]);
 
   const loadAllData = async () => {
-    if (!user) return;
-    
     setLoading(true);
     try {
-      const [inventory, shopListings, allListings] = await Promise.all([
-        getUserInventory(user.id),
-        getUserShopListings(user.id),
-        getAllShopListings()
-      ]);
+      if (user) {
+        const [inventory, shopListings, allListings] = await Promise.all([
+          getUserInventory(user.id),
+          getUserShopListings(user.id),
+          getAllShopListings()
+        ]);
 
-      setUserInventory(inventory);
-      setUserShopListings(shopListings);
-      setAllShopListings(allListings);
-      
-      // Update cart context with user data
-      loadUserData(inventory, shopListings);
+        setUserInventory(inventory);
+        setUserShopListings(shopListings);
+        setAllShopListings(allListings);
+        
+        // Update cart context with user data
+        loadUserData(inventory, shopListings);
+      } else {
+        const allListings = await getAllShopListings();
+        setAllShopListings(allListings.slice(0, 3));
+      }
     } catch (error) {
       console.error('Error loading data:', error);
-      showMessage('error', 'Failed to load data');
+      if (!user) {
+        showMessage('error', 'Please log in to view items');
+      } else {
+        showMessage('error', 'Failed to load data');
+      }
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
 
   const handleAddToCart = (product: any) => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      onNavigate('login');
       return;
     }
     addToCart(product, 1);
@@ -153,7 +156,13 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
           </div>
           {onNavigate && (
             <button
-              onClick={() => onNavigate('cart')}
+              onClick={() => {
+                if (!user) {
+                  onNavigate('login');
+                  return;
+                }
+                onNavigate('cart');
+              }}
               className="mt-4 md:mt-0 bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center space-x-2 shadow-md"
             >
               <ShoppingCart className="h-5 w-5" />
@@ -273,7 +282,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
                         <button 
                           onClick={() => {
                             if (!user) {
-                              setIsAuthModalOpen(true);
+                              onNavigate('login');
                               return;
                             }
                             setDirectBuyProduct(listing.product);
@@ -290,11 +299,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onNavigate }) => {
               </div>
             )}
         
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-        />
+
 
         {/* Checkout Modal */}
         <CheckoutModal

@@ -11,26 +11,16 @@ import Inventory from './components/Inventory';
 import CartPage from './components/CartPage';
 import ContactPage from './components/ContactPage';
 import Footer from './components/Footer';
+import AuthPage from './components/AuthPage';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const { loading, user } = useAuth();
 
   useEffect(() => {
-    // Redirect away from restricted pages if user doesn't have access
-    if (currentPage === 'dashboard' && (!user || (user.role !== 'farmer' && user.role !== 'admin'))) {
-      setCurrentPage('home');
-    }
-    if (currentPage === 'cart' && (!user || (user.role !== 'customer' && user.role !== 'admin'))) {
-      setCurrentPage('home');
-    }
-    if (currentPage === 'marketplace' && (!user || (user.role !== 'customer' && user.role !== 'admin'))) {
-      setCurrentPage('home');
-    }
-    if (currentPage === 'inventory' && (!user || (user.role !== 'farmer' && user.role !== 'admin'))) {
-      setCurrentPage('home');
-    }
+    // Redirections handled by individual components to show previews
   }, [user, currentPage]);
+
 
   // Show loading screen while auth is initializing
   if (loading) {
@@ -49,17 +39,19 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'home':
         return <HomePage />;
+      case 'login':
+        return <AuthPage onNavigate={setCurrentPage} />;
       case 'dashboard':
-        if (user && (user.role === 'farmer' || user.role === 'admin')) return <Dashboard />;
+        if (!user || (user.role === 'farmer' || user.role === 'admin')) return <Dashboard onNavigate={setCurrentPage} />;
         return <HomePage />;
       case 'marketplace':
-        if (user && (user.role === 'customer' || user.role === 'admin')) return <Marketplace onNavigate={setCurrentPage} />;
+        if (!user || (user.role === 'customer' || user.role === 'admin')) return <Marketplace onNavigate={setCurrentPage} />;
         return <HomePage />;
       case 'inventory':
-        if (user && (user.role === 'farmer' || user.role === 'admin')) return <Inventory />;
+        if (!user || (user.role === 'farmer' || user.role === 'admin')) return <Inventory onNavigate={setCurrentPage} />;
         return <HomePage />;
       case 'cart':
-        if (user && (user.role === 'customer' || user.role === 'admin')) return <CartPage />;
+        if (!user || (user.role === 'customer' || user.role === 'admin')) return <CartPage onNavigate={setCurrentPage} />;
         return <HomePage />;
       case 'contact':
         return <ContactPage />;

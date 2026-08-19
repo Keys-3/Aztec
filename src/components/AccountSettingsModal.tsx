@@ -26,7 +26,7 @@ const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onC
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Dashboard Preferences State
-  const [selectedSensors, setSelectedSensors] = useState<string[]>(['ph', 'water_temp', 'ec', 'do']);
+  const [selectedSensors, setSelectedSensors] = useState<string[]>(['temperature', 'humidity', 'ph', 'ec', 'light', 'co2', 'water_temp', 'do']);
 
   useEffect(() => {
     if (user) {
@@ -209,9 +209,13 @@ const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onC
                 <p className="text-gray-600 mb-6">Select which sensors you want to monitor on your dashboard.</p>
                 <div className="space-y-4">
                   {[
+                    { id: 'temperature', name: 'Temperature' },
+                    { id: 'humidity', name: 'Humidity' },
                     { id: 'ph', name: 'pH Level' },
-                    { id: 'water_temp', name: 'Water Temperature' },
                     { id: 'ec', name: 'Electrical Conductivity (EC)' },
+                    { id: 'light', name: 'Light Intensity' },
+                    { id: 'co2', name: 'CO2 Levels' },
+                    { id: 'water_temp', name: 'Water Temperature' },
                     { id: 'do', name: 'Dissolved Oxygen' }
                   ].map(sensor => (
                     <label key={sensor.id} className="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm">

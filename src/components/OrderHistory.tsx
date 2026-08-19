@@ -24,7 +24,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ isOpen, onClose, isModal = 
   }, [isOpen, user]);
 
   const fetchOrders = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const q = query(
